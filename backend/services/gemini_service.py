@@ -16,7 +16,7 @@ def analyze_clauses_batch(clauses: list[str]) -> list[dict]:
     formatted_clauses = "\n".join([f"{i+1}. {clause}" for i, clause in enumerate(clauses)])
 
     prompt = f"""
-    You are a legal analyst AI called LexiLens.
+    You are a legal analyst AI called LawLytic.
     Analyze EACH of the following legal clauses and provide a risk assessment for every one.
 
     **Clauses to Analyze:**
@@ -54,7 +54,7 @@ def get_answer_from_gemini(context: str, question: str) -> str:
     Answers a user's question based on the document's context.
     """
     prompt = f"""
-    You are a helpful AI assistant for LexiLens. Answer the user's question based *only* on the provided context from a legal document. Be friendly and clear.
+    You are a helpful AI assistant for LawLytic. Answer the user's question based *only* on the provided context from a legal document. Be friendly and clear.
 
     If the answer is not in the text, state that the document does not seem to provide that information.
 
