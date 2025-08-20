@@ -1,4 +1,4 @@
-# backend/main.py - Fixed Version
+# backend/main.py - Integrated Version
 
 import os
 import json
@@ -7,6 +7,7 @@ import asyncio
 import base64
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from services import gemini_service
@@ -39,9 +40,18 @@ def initialize_firebase():
         else:
             # Fallback to local file for local development
             print("🔑 Using Firebase credentials from local file")
-            if not os.path.exists("serviceAccountKey.json"):
-                raise FileNotFoundError("serviceAccountKey.json not found")
-            cred = credentials.Certificate("serviceAccountKey.json")
+            local_files = ["serviceAccountKey.json", "lawlytics-firebase.json"]
+            cred_file = None
+            
+            for file_name in local_files:
+                if os.path.exists(file_name):
+                    cred_file = file_name
+                    break
+            
+            if not cred_file:
+                raise FileNotFoundError("No Firebase service account file found")
+            
+            cred = credentials.Certificate(cred_file)
 
         firebase_admin.initialize_app(cred)
         
@@ -57,7 +67,7 @@ def initialize_firebase():
         if "SERVICE_DISABLED" in error_msg or "has not been used" in error_msg:
             print("❌ Firestore API is not enabled. Please enable it in Google Cloud Console:")
             print("   https://console.developers.google.com/apis/api/firestore.googleapis.com/overview")
-        elif "serviceAccountKey.json" in error_msg:
+        elif "service account" in error_msg.lower():
             print("❌ Firebase service account file not found")
         else:
             print(f"❌ Firebase initialization error: {error_msg}")
@@ -149,10 +159,9 @@ def get_documents_from_firestore(user_id: str) -> list:
     """Get user documents from Firestore."""
     try:
         if firestore_db:
-            # Fixed query using filter() method to avoid deprecation warning
+            # Modern syntax using FieldFilter
             docs_ref = (firestore_db.collection('documents')
-                       .where(filter=firestore.FieldFilter('userId', '==', user_id)) # type: ignore
-                       .order_by('createdAt', direction=firestore.Query.DESCENDING) # type: ignore
+                       .where(filter=FieldFilter('userId', '==', user_id))
                        .stream())
             
             documents = []
@@ -161,6 +170,8 @@ def get_documents_from_firestore(user_id: str) -> list:
                 doc_data['id'] = doc.id
                 documents.append(doc_data)
             
+            # Reverse to get newest first
+            documents.reverse()
             return documents
     except Exception as e:
         error_msg = str(e)
@@ -189,8 +200,8 @@ def upload_to_blob(file_name: str, contents: bytes) -> str | None:
         return None
     
     try:
-        # Fixed: Remove the 'access' parameter that's causing issues
-        blob_result = put(file_name, contents)
+        # Upload with random suffix to prevent overwrites
+        blob_result = put(file_name, contents, add_random_suffix=True) # type: ignore
         blob_url = blob_result['url']
         print(f"✅ File uploaded to blob: {blob_url}")
         return blob_url
@@ -198,7 +209,7 @@ def upload_to_blob(file_name: str, contents: bytes) -> str | None:
         print(f"⚠️ Vercel Blob upload failed: {e}")
         return None
 
-# --- NEW: Endpoint to fetch document history ---
+# --- Endpoint to fetch document history ---
 @app.get("/api/documents")
 async def get_documents(userId: str = Query(..., description="User ID to fetch documents for")):
     try:
@@ -221,7 +232,7 @@ async def get_documents(userId: str = Query(..., description="User ID to fetch d
         # Return empty list instead of error for better UX
         return {"documents": []}
 
-# --- NEW: Endpoint to fetch a single document's full analysis ---
+# --- Endpoint to fetch a single document's full analysis ---
 @app.get("/api/document/{doc_id}")
 async def get_document_details(doc_id: str):
     # Try Firestore first
@@ -236,7 +247,7 @@ async def get_document_details(doc_id: str):
     
     return document_data
 
-# --- ENHANCED: Upload endpoint with proper error handling ---
+# --- Enhanced Upload endpoint ---
 @app.post("/api/upload")
 async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile = File(...)):
     if not userId:
@@ -246,6 +257,7 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
         contents = await file.read()
         file_name = file.filename or "uploaded_document.pdf"
 
+        print(f"📤 Uploading {file_name} to Vercel Blob...")
         # 1. Upload file to Vercel Blob (with proper error handling)
         blob_url = upload_to_blob(file_name, contents)
 
@@ -270,16 +282,17 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
         
         print(f"🔍 Found {len(clauses_to_analyze)} clauses to analyze.")
 
-        # 4. Perform analysis using async logic
+        # 4. Perform analysis using async logic with chunking
         chunk_size = 10
         chunks = [clauses_to_analyze[i:i + chunk_size] for i in range(0, len(clauses_to_analyze), chunk_size)]
         print(f"📦 Split into {len(chunks)} chunks of size ~{chunk_size}.")
 
+        # Use semaphore to limit concurrent requests
         semaphore = asyncio.Semaphore(12)
         
         async def process_with_semaphore(chunk):
             async with semaphore:
-                await asyncio.sleep(1)
+                await asyncio.sleep(1)  # Rate limiting
                 return await analyze_chunk(chunk)
 
         tasks = [process_with_semaphore(chunk) for chunk in chunks]
@@ -291,7 +304,7 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
         # Combine results with original text
         analysis_results = []
         for i, clause_text in enumerate(clauses_to_analyze):
-            analysis = all_results[i]
+            analysis = all_results[i] if i < len(all_results) else create_fallback_analysis("Processing incomplete")
             analysis['original_text'] = clause_text
             analysis_results.append(analysis)
 
@@ -309,7 +322,7 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
             print(f"⚠️ Summary generation failed: {e}")
             brief_summary = f"Legal document analysis for {file_name}"
 
-        # 6. Prepare document data
+        # 6. Prepare document data for storage
         document_data = {
             "userId": userId,
             "fileName": file_name,
@@ -326,7 +339,8 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
             "fullText": full_text
         }
 
-        # 7. Save to Firestore (with fallback)
+        # 7. Save metadata to Firestore (with fallback to memory)
+        print(f"💾 Saving metadata to Firestore for user {userId}...")
         doc_id = save_document_to_firestore(document_data)
         
         if not doc_id:
@@ -341,7 +355,7 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f"💥 Unexpected server error: {e}")
+        print(f"💥 Unexpected server error during upload: {e}")
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 # --- Enhanced Chat Endpoint ---
@@ -367,8 +381,15 @@ async def chat_with_document(request: dict):
         raise HTTPException(status_code=400, detail="Document text not available for Q&A.")
     
     try:
-        # Use the synchronous method if async is not available
-        answer = gemini_service.get_answer_from_gemini(context, question)
+        # Use the appropriate method based on what's available in your gemini_service
+        if hasattr(gemini_service, 'get_answer_from_gemini'):
+            answer = gemini_service.get_answer_from_gemini(context, question)
+        else:
+            # Fallback to direct model usage if the helper method doesn't exist
+            prompt = f"Context: {context[:3000]}\n\nQuestion: {question}\n\nAnswer:"
+            response = await gemini_service.model.generate_content_async(prompt)
+            answer = response.text.strip()
+        
         return {"answer": answer}
     except Exception as e:
         print(f"❌ Chat error: {e}")

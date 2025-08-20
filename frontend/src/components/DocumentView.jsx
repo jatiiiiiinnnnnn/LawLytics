@@ -3,46 +3,89 @@ import { useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { 
+    Shield, 
+    AlertTriangle, 
+    CheckCircle, 
+    Eye, 
+    MessageSquare, 
+    Download, 
+    Filter, 
+    Sun, 
+    Moon,
+    Maximize2,
+    Minimize2,
+    Send,
+    Bot,
+    User,
+    FileText,
+    TrendingUp,
+    Activity,
+    Settings,
+    Star,
+    ChevronRight,
+    Clock,
+    Target,
+    AlertCircle,
+    Info,
+    Lightbulb,
+    BarChart3,
+    PieChart,
+    Zap
+} from 'lucide-react';
 
 // --- Clean Helper Components ---
 
-const StatCard = ({ label, value, color, icon, isDark }) => (
-    <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200`}>
-        <div className="flex items-center justify-between mb-3">
-            <div className={`w-10 h-10 rounded-lg ${color.replace('text-', 'bg-').replace('-600', isDark ? '-900' : '-100')} flex items-center justify-center`}>
-                <span className={`text-lg ${color}`}>{icon}</span>
+const StatCard = ({ label, value, color, icon: IconComponent, isDark, trend }) => (
+    <div className={`${isDark ? 'bg-gray-800/90 border-gray-700/50 hover:bg-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:bg-gray-50'} border backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group`}>
+        <div className="flex items-center justify-between mb-4">
+            <div className={`w-12 h-12 rounded-xl ${color.replace('text-', 'bg-').replace('-500', isDark ? '-900/50' : '-100')} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <IconComponent className={`w-6 h-6 ${color}`} />
             </div>
+            {trend && (
+                <div className={`flex items-center space-x-1 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <TrendingUp className="w-3 h-3" />
+                    <span className="text-xs font-medium">{Math.abs(trend)}%</span>
+                </div>
+            )}
         </div>
-        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} font-medium`}>{label}</p>
-        <p className={`text-2xl font-bold ${color} mt-1`}>{value}</p>
+        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} font-medium mb-1`}>{label}</p>
+        <p className={`text-3xl font-bold ${color} tracking-tight`}>{value}</p>
     </div>
 );
 
 const RiskProgressBar = ({ score, color, isDark }) => {
-    const strokeColor = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#059669';
+    const strokeColor = score >= 70 ? '#ef4444' : score >= 40 ? '#f59e0b' : '#10b981';
+    const circumference = 2 * Math.PI * 15.9155;
+    const strokeDasharray = `${(score / 100) * circumference}, ${circumference}`;
     
     return (
-        <div className="relative w-24 h-24">
+        <div className="relative w-28 h-28">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
+                <circle
                     className={isDark ? 'text-gray-700' : 'text-gray-200'}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    cx="18"
+                    cy="18"
+                    r="15.9155"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="3"
+                    strokeWidth="2"
                 />
-                <path
-                    strokeDasharray={`${score}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                <circle
+                    cx="18"
+                    cy="18"
+                    r="15.9155"
                     fill="none"
                     stroke={strokeColor}
                     strokeWidth="3"
+                    strokeDasharray={strokeDasharray}
                     strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{score}</span>
-                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>SCORE</span>
+                <span className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{score}</span>
+                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} font-medium tracking-wide`}>SCORE</span>
             </div>
         </div>
     );
@@ -53,21 +96,45 @@ const RiskProgressBar = ({ score, color, isDark }) => {
 export default function DocumentView() {
     const location = useLocation();
     const { id: documentId } = useParams();
-    const { analysis } = location.state || { analysis: [] };
+    const [analysis, setAnalysis] = useState(location.state?.analysis || null);
 
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(!analysis);
     const [selectedRiskFilter, setSelectedRiskFilter] = useState('all');
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
     const [isChatExpanded, setIsChatExpanded] = useState(false);
+    const [error, setError] = useState('');
 
     const chatEndRef = useRef(null);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        // If analysis data is already present, no need to fetch.
+        if (analysis) {
+            setIsLoadingData(false);
+            return;
+        }
+
+        const fetchDocumentDetails = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8000/api/document/${documentId}`);
+                // The full analysis is stored in the 'fullAnalysis' field
+                setAnalysis(response.data.fullAnalysis); 
+            } catch (err) {
+                console.error("Failed to fetch document details:", err);
+                setError("Could not load document analysis. Please go back to the dashboard and try again.");
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        fetchDocumentDetails();
+    }, [documentId, analysis]);
 
     const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);
@@ -96,6 +163,14 @@ export default function DocumentView() {
         }
     };
 
+    if (isLoadingData) {
+        return <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">Loading document analysis...</div>;
+    }
+
+    if (error) {
+        return <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">{error}</div>;
+    }
+
     const riskStats = {
         high: analysis.filter(c => c.risk_level === 'Red').length,
         moderate: analysis.filter(c => c.risk_level === 'Orange').length,
@@ -108,9 +183,9 @@ export default function DocumentView() {
         Math.round(((riskStats.high * 3 + riskStats.moderate * 2 + riskStats.review * 1) / (riskStats.total * 3)) * 100) : 0;
 
     const getRiskLevel = (score) => {
-        if (score >= 70) return { level: 'High Risk', color: 'text-red-600' };
-        if (score >= 40) return { level: 'Moderate Risk', color: 'text-amber-600' };
-        return { level: 'Low Risk', color: 'text-green-600' };
+        if (score >= 70) return { level: 'High Risk', color: 'text-red-500', bgColor: 'bg-red-500' };
+        if (score >= 40) return { level: 'Moderate Risk', color: 'text-amber-500', bgColor: 'bg-amber-500' };
+        return { level: 'Low Risk', color: 'text-green-500', bgColor: 'bg-green-500' };
     };
 
     const currentRisk = getRiskLevel(overallRiskScore);
@@ -125,43 +200,45 @@ export default function DocumentView() {
         const badges = {
             Red: { 
                 text: 'High Risk', 
-                bg: isDark ? 'bg-red-900/50' : 'bg-red-50', 
-                color: isDark ? 'text-red-300' : 'text-red-700', 
-                border: isDark ? 'border-red-700' : 'border-red-200', 
-                icon: '⚠️' 
+                bg: isDark ? 'bg-red-900/30' : 'bg-red-50', 
+                color: isDark ? 'text-red-400' : 'text-red-700', 
+                border: isDark ? 'border-red-800/50' : 'border-red-200', 
+                icon: AlertTriangle 
             },
             Orange: { 
                 text: 'Moderate', 
-                bg: isDark ? 'bg-amber-900/50' : 'bg-amber-50', 
-                color: isDark ? 'text-amber-300' : 'text-amber-700', 
-                border: isDark ? 'border-amber-700' : 'border-amber-200', 
-                icon: '⚠️' 
+                bg: isDark ? 'bg-amber-900/30' : 'bg-amber-50', 
+                color: isDark ? 'text-amber-400' : 'text-amber-700', 
+                border: isDark ? 'border-amber-800/50' : 'border-amber-200', 
+                icon: AlertCircle 
             },
             Green: { 
                 text: 'Low Risk', 
-                bg: isDark ? 'bg-green-900/50' : 'bg-green-50', 
-                color: isDark ? 'text-green-300' : 'text-green-700', 
-                border: isDark ? 'border-green-700' : 'border-green-200', 
-                icon: '✓' 
+                bg: isDark ? 'bg-green-900/30' : 'bg-green-50', 
+                color: isDark ? 'text-green-400' : 'text-green-700', 
+                border: isDark ? 'border-green-800/50' : 'border-green-200', 
+                icon: CheckCircle 
             },
             Gray: { 
                 text: 'Review', 
-                bg: isDark ? 'bg-gray-700/50' : 'bg-gray-50', 
-                color: isDark ? 'text-gray-300' : 'text-gray-700', 
-                border: isDark ? 'border-gray-600' : 'border-gray-200', 
-                icon: '?' 
+                bg: isDark ? 'bg-gray-700/30' : 'bg-gray-50', 
+                color: isDark ? 'text-gray-400' : 'text-gray-700', 
+                border: isDark ? 'border-gray-600/50' : 'border-gray-200', 
+                icon: Eye 
             }
         };
         const badge = badges[riskLevel] || badges.Gray;
+        const IconComponent = badge.icon;
+        
         return (
-            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.color} border ${badge.border}`}>
-                <span>{badge.icon}</span>
+            <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${badge.bg} ${badge.color} border ${badge.border} backdrop-blur-sm`}>
+                <IconComponent className="w-3 h-3" />
                 {badge.text}
             </span>
         );
     };
 
-    // Enhanced report generation with comprehensive contract analysis
+    // Enhanced report generation with comprehensive contract analysis (UNCHANGED)
     const generateComprehensiveReport = () => {
         const highRiskClauses = analysis.filter(c => c.risk_level === 'Red');
         const moderateRiskClauses = analysis.filter(c => c.risk_level === 'Orange');
@@ -605,47 +682,58 @@ export default function DocumentView() {
         }
     };
 
+    const quickSuggestions = [
+        { text: 'Explain high-risk clauses', icon: AlertTriangle },
+        { text: 'Negotiation strategies', icon: Target },
+        { text: 'Legal implications', icon: Shield },
+        { text: 'Contract summary', icon: FileText }
+    ];
+
     return (
-        <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
-            {/* Enhanced Header with Dark Mode Toggle */}
-            <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b sticky top-0 z-50 transition-colors duration-300`}>
+        <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-all duration-300`}>
+            {/* Enhanced Header with Gradient Background */}
+            <header className={`${isDarkMode ? 'bg-gray-800/95 border-gray-700/50' : 'bg-white/95 border-gray-200'} border-b backdrop-blur-sm sticky top-0 z-50 transition-all duration-300`}>
                 <div className="max-w-7xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">L</span>
+                            <div className="relative">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                    <Shield className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
                             </div>
                             <div>
-                                <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300`}>Contract Analysis</h1>
-                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} transition-colors duration-300`}>Document Review & Risk Assessment</p>
+                                <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300`}>
+                                    Contract Analysis
+                                </h1>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} transition-colors duration-300 flex items-center space-x-2`}>
+                                    <Activity className="w-3 h-3" />
+                                    <span>AI-Powered Legal Intelligence</span>
+                                </p>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-3">
                             {/* Dark Mode Toggle */}
                             <button
                                 onClick={toggleDarkMode}
-                                className={`p-2.5 rounded-lg transition-colors duration-300 ${
+                                className={`p-3 rounded-xl transition-all duration-300 ${
                                     isDarkMode 
-                                        ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                                        ? 'bg-gray-700/80 text-yellow-400 hover:bg-gray-600 hover:scale-105' 
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                                } backdrop-blur-sm`}
                                 title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                             >
                                 {isDarkMode ? (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                                    </svg>
+                                    <Sun className="w-5 h-5" />
                                 ) : (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                    </svg>
+                                    <Moon className="w-5 h-5" />
                                 )}
                             </button>
                             
                             <button 
                                 onClick={downloadReport} 
                                 disabled={isGeneratingReport}
-                                className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-lg hover:shadow-xl hover:scale-105"
                             >
                                 {isGeneratingReport ? (
                                     <>
@@ -654,10 +742,8 @@ export default function DocumentView() {
                                     </>
                                 ) : (
                                     <>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        <span>Download Report</span>
+                                        <Download className="w-4 h-4" />
+                                        <span>Export Report</span>
                                     </>
                                 )}
                             </button>
@@ -667,93 +753,140 @@ export default function DocumentView() {
             </header>
 
             <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Enhanced Risk Summary */}
-                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl shadow-sm border p-8 mb-8 transition-colors duration-300`}>
-                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-6 transition-colors duration-300`}>Risk Assessment Overview</h2>
+                {/* Enhanced Risk Summary with Animated Elements */}
+                <div className={`${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-8 mb-8 transition-all duration-300 relative overflow-hidden`}>
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-5">
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+                    </div>
                     
-                    <div className="grid lg:grid-cols-6 gap-8 items-center">
-                        <div className="lg:col-span-2 flex items-center space-x-6">
-                            <RiskProgressBar score={overallRiskScore} color={currentRisk.color} isDark={isDarkMode} />
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-8">
                             <div>
-                                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-1 transition-colors duration-300`}>Overall Risk Level</p>
-                                <p className={`text-2xl font-bold ${currentRisk.color} transition-colors duration-300`}>{currentRisk.level}</p>
-                                <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'} text-sm mt-1 transition-colors duration-300`}>{riskStats.total} clauses analyzed</p>
+                                <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-3`}>
+                                    <BarChart3 className="w-8 h-8 text-blue-500" />
+                                    <span>Risk Assessment Overview</span>
+                                </h2>
+                                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2 flex items-center space-x-2`}>
+                                    <Clock className="w-4 h-4" />
+                                    <span>Generated {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</span>
+                                </p>
+                            </div>
+                            <div className={`px-4 py-2 rounded-full ${currentRisk.bgColor} bg-opacity-20 border ${currentRisk.color.replace('text-', 'border-')}`}>
+                                <span className={`${currentRisk.color} font-semibold text-sm`}>{currentRisk.level}</span>
                             </div>
                         </div>
                         
-                        <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatCard 
-                                label="High Risk" 
-                                value={riskStats.high} 
-                                color="text-red-600" 
-                                icon="⚠️"
-                                isDark={isDarkMode}
-                            />
-                            <StatCard 
-                                label="Moderate" 
-                                value={riskStats.moderate} 
-                                color="text-amber-600" 
-                                icon="⚠️"
-                                isDark={isDarkMode}
-                            />
-                            <StatCard 
-                                label="Low Risk" 
-                                value={riskStats.low} 
-                                color="text-green-600" 
-                                icon="✓"
-                                isDark={isDarkMode}
-                            />
-                            <StatCard 
-                                label="Review" 
-                                value={riskStats.review} 
-                                color="text-gray-600" 
-                                icon="?"
-                                isDark={isDarkMode}
-                            />
+                        <div className="grid lg:grid-cols-6 gap-8 items-center">
+                            <div className="lg:col-span-2 flex items-center space-x-8">
+                                <div className="relative">
+                                    <RiskProgressBar score={overallRiskScore} color={currentRisk.color} isDark={isDarkMode} />
+                                    <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 blur animate-pulse"></div>
+                                </div>
+                                <div>
+                                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-2 flex items-center space-x-2`}>
+                                        <PieChart className="w-4 h-4" />
+                                        <span>Overall Risk Level</span>
+                                    </p>
+                                    <p className={`text-3xl font-bold ${currentRisk.color} transition-colors duration-300`}>{currentRisk.level}</p>
+                                    <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'} text-sm mt-2 flex items-center space-x-1`}>
+                                        <FileText className="w-3 h-3" />
+                                        <span>{riskStats.total} clauses analyzed</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <StatCard 
+                                    label="High Risk" 
+                                    value={riskStats.high} 
+                                    color="text-red-500" 
+                                    icon={AlertTriangle}
+                                    isDark={isDarkMode}
+                                    trend={riskStats.high > 0 ? -12 : null}
+                                />
+                                <StatCard 
+                                    label="Moderate" 
+                                    value={riskStats.moderate} 
+                                    color="text-amber-500" 
+                                    icon={AlertCircle}
+                                    isDark={isDarkMode}
+                                    trend={riskStats.moderate > 0 ? 5 : null}
+                                />
+                                <StatCard 
+                                    label="Low Risk" 
+                                    value={riskStats.low} 
+                                    color="text-green-500" 
+                                    icon={CheckCircle}
+                                    isDark={isDarkMode}
+                                    trend={riskStats.low > 0 ? 8 : null}
+                                />
+                                <StatCard 
+                                    label="Review" 
+                                    value={riskStats.review} 
+                                    color="text-gray-500" 
+                                    icon={Eye}
+                                    isDark={isDarkMode}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Enhanced Main Content with Responsive Chat */}
-                <div className={`grid gap-8 ${isChatExpanded ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} transition-all duration-300`}>
-                    {/* Clause List */}
-                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-3'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl shadow-sm border p-6 transition-colors duration-300`}>
+                <div className={`grid gap-8 ${isChatExpanded ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} transition-all duration-500`}>
+                    {/* Enhanced Clause List */}
+                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-3'} ${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-6 transition-all duration-300`}>
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300`}>Document Clauses</h2>
-                            <select 
-                                value={selectedRiskFilter} 
-                                onChange={(e) => setSelectedRiskFilter(e.target.value)} 
-                                className={`${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300 text-gray-900'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300`}
-                            >
-                                <option value="all">All Clauses ({riskStats.total})</option>
-                                <option value="high">High Risk ({riskStats.high})</option>
-                                <option value="moderate">Moderate ({riskStats.moderate})</option>
-                                <option value="low">Low Risk ({riskStats.low})</option>
-                                <option value="review">Review ({riskStats.review})</option>
-                            </select>
+                            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-3`}>
+                                <FileText className="w-6 h-6 text-blue-500" />
+                                <span>Document Clauses</span>
+                            </h2>
+                            <div className="flex items-center space-x-3">
+                                <Filter className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <select 
+                                    value={selectedRiskFilter} 
+                                    onChange={(e) => setSelectedRiskFilter(e.target.value)} 
+                                    className={`${isDarkMode ? 'bg-gray-700/80 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
+                                >
+                                    <option value="all">All Clauses ({riskStats.total})</option>
+                                    <option value="high">🚨 High Risk ({riskStats.high})</option>
+                                    <option value="moderate">⚠️ Moderate ({riskStats.moderate})</option>
+                                    <option value="low">✅ Low Risk ({riskStats.low})</option>
+                                    <option value="review">👁️ Review ({riskStats.review})</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                        <div className="space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
                             {filteredClauses.map((clause, index) => (
-                                <div key={index} className={`${isDarkMode ? 'border-gray-600 hover:bg-gray-700/50' : 'border-gray-200 hover:bg-gray-50'} border rounded-lg p-5 transition-all duration-200`}>
-                                    <div className="flex items-center justify-between mb-3">
+                                <div key={index} className={`${isDarkMode ? 'border-gray-600/50 hover:bg-gray-700/30 hover:border-gray-500' : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'} border rounded-xl p-6 transition-all duration-300 group hover:shadow-lg`}>
+                                    <div className="flex items-center justify-between mb-4">
                                         {getRiskBadge(clause.risk_level, isDarkMode)}
-                                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} font-medium transition-colors duration-300`}>CLAUSE #{index + 1}</span>
+                                        <div className="flex items-center space-x-2">
+                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} font-medium tracking-wide`}>CLAUSE</span>
+                                            <div className={`w-6 h-6 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} flex items-center justify-center`}>
+                                                <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{index + 1}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div className={`${isDarkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-100'} rounded-lg p-4 mb-3 border transition-colors duration-300`}>
-                                        <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-800'} leading-relaxed text-sm font-mono transition-colors duration-300`}>{clause.original_text}</p>
+                                    <div className={`${isDarkMode ? 'bg-gray-700/50 border-gray-600/50' : 'bg-gray-50 border-gray-200'} rounded-xl p-4 mb-4 border transition-all duration-300 group-hover:border-blue-300`}>
+                                        <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-800'} leading-relaxed text-sm font-mono`}>{clause.original_text}</p>
                                     </div>
                                     
                                     {clause.plain_english && (
-                                        <div className={`${isDarkMode ? 'bg-blue-900/50 border-blue-700' : 'bg-blue-50 border-blue-200'} rounded-lg p-4 border transition-colors duration-300`}>
+                                        <div className={`${isDarkMode ? 'bg-blue-900/30 border-blue-700/50' : 'bg-blue-50 border-blue-200'} rounded-xl p-4 border transition-all duration-300`}>
                                             <div className="flex items-start space-x-3">
-                                                <div className={`w-6 h-6 ${isDarkMode ? 'bg-blue-800' : 'bg-blue-100'} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-300`}>
-                                                    <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} text-sm transition-colors duration-300`}>💡</span>
+                                                <div className={`w-8 h-8 ${isDarkMode ? 'bg-blue-800/50' : 'bg-blue-100'} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-300`}>
+                                                    <Lightbulb className={`w-4 h-4 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`} />
                                                 </div>
-                                                <div>
-                                                    <h4 className={`${isDarkMode ? 'text-blue-300' : 'text-blue-900'} font-medium text-sm mb-1 transition-colors duration-300`}>Analysis</h4>
-                                                    <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-800'} text-sm leading-relaxed transition-colors duration-300`}>{clause.plain_english}</p>
+                                                <div className="flex-1">
+                                                    <h4 className={`${isDarkMode ? 'text-blue-300' : 'text-blue-900'} font-semibold text-sm mb-2 flex items-center space-x-2`}>
+                                                        <span>AI Analysis</span>
+                                                        <Zap className="w-3 h-3" />
+                                                    </h4>
+                                                    <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-800'} text-sm leading-relaxed`}>{clause.plain_english}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -762,10 +895,11 @@ export default function DocumentView() {
                             ))}
                             
                             {filteredClauses.length === 0 && (
-                                <div className="text-center py-12">
-                                    <div className={`w-16 h-16 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}>
-                                        <span className={`text-2xl ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} transition-colors duration-300`}>🔍</span>
+                                <div className="text-center py-16">
+                                    <div className={`w-20 h-20 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300`}>
+                                        <Filter className={`w-8 h-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} transition-colors duration-300`} />
                                     </div>
+                                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>No clauses found</h3>
                                     <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} transition-colors duration-300`}>No clauses match the selected filter</p>
                                     <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'} text-sm mt-1 transition-colors duration-300`}>Try selecting a different risk level</p>
                                 </div>
@@ -774,85 +908,105 @@ export default function DocumentView() {
                     </div>
 
                     {/* Enhanced AI Chat Panel */}
-                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-1'} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl shadow-sm border flex flex-col transition-all duration-300 ${isChatExpanded ? 'h-[85vh]' : 'h-[80vh]'}`}>
-                        <div className={`p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} border-b transition-colors duration-300`}>
+                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-1'} ${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm flex flex-col transition-all duration-500 ${isChatExpanded ? 'h-[85vh]' : 'h-[80vh]'}`}>
+                        <div className={`p-6 ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200'} border-b transition-colors duration-300`}>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className={`w-8 h-8 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-lg flex items-center justify-center transition-colors duration-300`}>
-                                        <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} transition-colors duration-300`}>🤖</span>
+                                <div className="flex items-center space-x-4">
+                                    <div className="relative">
+                                        <div className={`w-10 h-10 ${isDarkMode ? 'bg-blue-900/50' : 'bg-blue-100'} rounded-xl flex items-center justify-center transition-colors duration-300`}>
+                                            <Bot className={`w-5 h-5 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} transition-colors duration-300`} />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
                                     </div>
                                     <div>
-                                        <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300`}>AI Legal Assistant</h3>
-                                        <div className="flex items-center space-x-1">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>Online</span>
+                                        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-2`}>
+                                            <span>LawLytics AI</span>
+                                            <Star className="w-4 h-4 text-yellow-500" />
+                                        </h3>
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>Online & Ready</span>
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setIsChatExpanded(!isChatExpanded)}
-                                    className={`p-2 rounded-lg transition-colors duration-300 ${
+                                    className={`p-2.5 rounded-xl transition-all duration-300 ${
                                         isDarkMode 
                                             ? 'hover:bg-gray-700 text-gray-400 hover:text-white' 
                                             : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                                    }`}
+                                    } hover:scale-110`}
                                     title={isChatExpanded ? 'Minimize chat' : 'Expand chat'}
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isChatExpanded ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
-                                    </svg>
+                                    {isChatExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
                         
-                        <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+                        <div className="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar">
                             {messages.length === 0 && (
-                                <div className="text-center py-8">
-                                    <div className={`w-12 h-12 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-lg flex items-center justify-center mx-auto mb-3 transition-colors duration-300`}>
-                                        <span className="text-xl">💬</span>
+                                <div className="text-center py-12">
+                                    <div className={`w-16 h-16 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}>
+                                        <MessageSquare className="w-8 h-8 text-blue-500" />
                                     </div>
-                                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-1 transition-colors duration-300`}>Ask me about your contract</p>
-                                    <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'} text-xs transition-colors duration-300`}>I can explain clauses, risks, and provide legal insights</p>
+                                    <h4 className={`font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Ask me anything</h4>
+                                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-1 transition-colors duration-300`}>I can explain clauses, assess risks, and provide legal insights</p>
+                                    <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'} text-xs transition-colors duration-300 flex items-center justify-center space-x-1`}>
+                                        <Zap className="w-3 h-3" />
+                                        <span>Powered by AI</span>
+                                    </p>
                                 </div>
                             )}
                             
                             {messages.map((msg, index) => (
-                                <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-xs p-3 rounded-lg text-sm transition-colors duration-300 ${
+                                <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
+                                    <div className={`max-w-xs relative group ${
                                         msg.sender === 'user' 
-                                            ? 'bg-blue-600 text-white' 
+                                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
                                             : isDarkMode 
-                                                ? 'bg-gray-700 text-gray-200 border border-gray-600' 
+                                                ? 'bg-gray-700/80 text-gray-200 border border-gray-600/50' 
                                                 : 'bg-gray-100 text-gray-800 border border-gray-200'
-                                    }`}>
-                                        <p className="leading-relaxed">{msg.text}</p>
-                                        <p className={`text-xs mt-2 ${
-                                            msg.sender === 'user' 
-                                                ? 'text-blue-100' 
-                                                : isDarkMode 
-                                                    ? 'text-gray-400' 
-                                                    : 'text-gray-500'
-                                        } transition-colors duration-300`}>
-                                            {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        </p>
+                                    } p-4 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105`}>
+                                        <div className="flex items-start space-x-2">
+                                            {msg.sender === 'ai' && (
+                                                <Bot className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                                            )}
+                                            {msg.sender === 'user' && (
+                                                <User className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+                                            )}
+                                            <div className="flex-1">
+                                                <p className="leading-relaxed text-sm">{msg.text}</p>
+                                                <p className={`text-xs mt-2 ${
+                                                    msg.sender === 'user' 
+                                                        ? 'text-blue-100' 
+                                                        : isDarkMode 
+                                                            ? 'text-gray-400' 
+                                                            : 'text-gray-500'
+                                                } transition-colors duration-300 flex items-center space-x-1`}>
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                             
                             {isLoading && (
                                 <div className="flex justify-start">
-                                    <div className={`p-3 rounded-lg transition-colors duration-300 ${
+                                    <div className={`p-4 rounded-2xl transition-colors duration-300 ${
                                         isDarkMode 
-                                            ? 'bg-gray-700 border border-gray-600' 
+                                            ? 'bg-gray-700/80 border border-gray-600/50' 
                                             : 'bg-gray-100 border border-gray-200'
-                                    }`}>
-                                        <div className="flex items-center space-x-2">
+                                    } backdrop-blur-sm`}>
+                                        <div className="flex items-center space-x-3">
+                                            <Bot className="w-4 h-4 text-blue-500" />
                                             <div className="flex space-x-1">
                                                 <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`}></div>
                                                 <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}}></div>
                                                 <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}}></div>
                                             </div>
-                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>Thinking...</span>
+                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>Analyzing...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -860,51 +1014,86 @@ export default function DocumentView() {
                             <div ref={chatEndRef} />
                         </div>
                         
-                        <div className={`p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} border-t transition-colors duration-300`}>
-                            <form onSubmit={handleSendMessage} className="space-y-3">
+                        <div className={`p-6 ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200'} border-t transition-colors duration-300`}>
+                            <form onSubmit={handleSendMessage} className="space-y-4">
                                 <div className="relative">
                                     <input 
                                         type="text" 
                                         value={userInput} 
                                         onChange={(e) => setUserInput(e.target.value)} 
                                         placeholder="Ask about specific clauses or risks..." 
-                                        className={`w-full px-3 py-2 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                                        className={`w-full px-4 py-3 pr-12 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
                                             isDarkMode 
-                                                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                                                : 'border-gray-300 text-gray-900 placeholder-gray-500'
-                                        }`} 
+                                                ? 'bg-gray-700/80 border-gray-600/50 text-white placeholder-gray-400' 
+                                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                        } backdrop-blur-sm`} 
                                     />
                                     <button 
                                         type="submit" 
                                         disabled={isLoading || !userInput.trim()} 
-                                        className="absolute right-1 top-1 bg-blue-600 text-white p-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors duration-200"
+                                        className="absolute right-2 top-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-110"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                        </svg>
+                                        <Send className="w-4 h-4" />
                                     </button>
                                 </div>
-                                <div className="flex flex-wrap gap-1">
-                                    {['Explain high-risk clauses', 'Negotiation strategies', 'Legal implications', 'Contract summary'].map((suggestion, index) => (
-                                        <button
-                                            key={index}
-                                            type="button"
-                                            onClick={() => setUserInput(suggestion)}
-                                            className={`text-xs rounded-full px-2 py-1 transition-colors duration-200 ${
-                                                isDarkMode 
-                                                    ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300 hover:text-white' 
-                                                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 hover:text-gray-800'
-                                            }`}
-                                        >
-                                            {suggestion}
-                                        </button>
-                                    ))}
+                                <div className="flex flex-wrap gap-2">
+                                    {quickSuggestions.map((suggestion, index) => {
+                                        const IconComponent = suggestion.icon;
+                                        return (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => setUserInput(suggestion.text)}
+                                                className={`text-xs rounded-full px-3 py-2 transition-all duration-300 flex items-center space-x-1 hover:scale-105 ${
+                                                    isDarkMode 
+                                                        ? 'bg-gray-700/80 hover:bg-gray-600 border border-gray-600/50 text-gray-300 hover:text-white' 
+                                                        : 'bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 hover:text-gray-800'
+                                                } backdrop-blur-sm`}
+                                            >
+                                                <IconComponent className="w-3 h-3" />
+                                                <span>{suggestion.text}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
             </main>
+            
+            {/* Custom Styles */}
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: ${isDarkMode ? '#1f2937' : '#f3f4f6'};
+                    border-radius: 3px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: ${isDarkMode ? '#4b5563' : '#d1d5db'};
+                    border-radius: 3px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: ${isDarkMode ? '#6b7280' : '#9ca3af'};
+                }
+                
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .animate-fadeIn {
+                    animation: fadeIn 0.3s ease-out forwards;
+                }
+            `}</style>
         </div>
     );
 }
