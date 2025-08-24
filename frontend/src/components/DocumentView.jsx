@@ -167,9 +167,9 @@ export default function DocumentView() {
         const fetchDocumentDetails = async () => {
             try {
                 setIsLoadingData(true);
-                console.log("Making API call to:", `http://localhost:8000/api/document/${documentId}`);
+                console.log("Making API call to:", `/api/document/${documentId}`);
                 
-                const response = await axios.get(`http://localhost:8000/api/document/${documentId}`);
+                const response = await axios.get(`/api/document/${documentId}`);
                 console.log("API Response:", response.data);
                 
                 // FIX 3: Check the actual structure of your API response
@@ -221,9 +221,9 @@ export default function DocumentView() {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:8000/api/chat', {
-                document_id: documentId,
-                question: userInput,
+            const response = await axios.post('/api/chat', { 
+            document_id: documentId, 
+            question: userInput 
             });
             setMessages([...newMessages, { sender: 'ai', text: response.data.answer }]);
         } catch (error) {

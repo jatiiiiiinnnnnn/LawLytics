@@ -77,57 +77,39 @@ export default function Dashboard() {
         setErrorMessage(''); // Clear previous errors when a new file is selected
     };
 
-    const handleUpload = async () => {
-        if (!file || !currentUser) return; // Check for user
-        setIsLoading(true);
-        setErrorMessage('');
-        
-        const formData = new FormData();
-        formData.append('file', file);
+    const handleUpload = async (type) => {
+    if (!file || !currentUser) return;
+    
+    setIsLoading(true);
+    setAnalysisType(type);
+    setErrorMessage('');
+    
+    const formData = new FormData();
+    formData.append('file', file);
 
-        try {
-            // Pass the REAL user ID to the upload endpoint
-            const response = await axios.post(
-                `http://localhost:8000/api/upload?userId=${currentUser.uid}`, 
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                }
-            );
-            
-            // Navigate with state for instant view, history will update on next load
-            navigate(`/document/${response.data.document_id}`, { 
-                state: { analysis: response.data.analysis } 
-            });
-        } catch (error) {
-            console.error('Upload failed:', error);
-            
-            // Enhanced error handling
-            if (error.response) {
-                switch (error.response.status) {
-                    case 503:
-                        setErrorMessage('Analysis Failed: The AI couldn\'t process this document. It might be too complex or poorly formatted. Please try another file.');
-                        break;
-                    case 415:
-                        setErrorMessage('Unsupported File Type: Please upload a PDF or text file.');
-                        break;
-                    case 400:
-                        setErrorMessage('Invalid Document: The file appears to be empty or corrupted. Please try another file.');
-                        break;
-                    case 413:
-                        setErrorMessage('File Too Large: Please upload a smaller document.');
-                        break;
-                    default:
-                        setErrorMessage('Upload Failed: An unexpected error occurred. Please try again.');
-                }
-            } else if (error.request) {
-                setErrorMessage('Connection Failed: Please check your internet connection and try again.');
-            } else {
-                setErrorMessage('Upload Failed: An unexpected error occurred. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
+    try {
+        // --- THIS IS THE FIX ---
+        // The URL is now relative, starting with /api/
+        const response = await axios.post(
+            `/api/upload?userId=${currentUser.uid}&analysisType=${type}`, 
+            formData
+        );
+        // --- END OF FIX ---
+        
+        const { document_id, data } = response.data;
+        
+        if (type === 'timeline') {
+            navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
+        } else {
+            navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
         }
+    } catch (error) {
+        setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+    } finally {
+        setIsLoading(false);
+        setAnalysisType('');
+        setFile(null);
+    }
     };
 
     const refreshDocuments = async () => {
