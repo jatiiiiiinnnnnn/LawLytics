@@ -73,7 +73,7 @@ export default function Dashboard() {
         if (!file || !currentUser) return;
         
         setIsLoading(true);
-        setAnalysisType(type); // This line caused the error
+        setAnalysisType(type);
         setErrorMessage('');
         
         const formData = new FormData();
