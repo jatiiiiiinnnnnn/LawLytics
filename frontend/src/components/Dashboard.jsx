@@ -4,240 +4,146 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FileText, Calendar, UploadCloud, BarChart3 } from 'lucide-react';
 
-const DocumentCard = ({ doc }) => (
-    <Link 
-        to={`/document/${doc.id}`} 
-        className="block bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group"
-    >
-        <div className="flex justify-between items-start">
-            <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate mr-4">
-                {doc.fileName}
-            </h3>
-            <div className="flex space-x-2 text-sm flex-shrink-0">
-                <span className="flex items-center gap-1.5 font-semibold text-red-400 bg-red-950/50 px-2 py-1 rounded-md">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    {doc.riskCounts?.red || 0}
-                </span>
-                <span className="flex items-center gap-1.5 font-semibold text-amber-400 bg-amber-950/50 px-2 py-1 rounded-md">
-                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                    {doc.riskCounts?.orange || 0}
-                </span>
+const DocumentCard = ({ doc }) => {
+    // This component now correctly links to the timeline or document view based on analysisType
+    const linkPath = doc.analysisType === 'timeline' ? `/timeline/${doc.id}` : `/document/${doc.id}`;
+
+    return (
+        <Link to={linkPath} className="block bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group">
+            <div className="flex justify-between items-start">
+                <h3 className="font-bold text-lg text-white group-hover:text-blue-400 pr-4 line-clamp-1">{doc.fileName}</h3>
+                {/* It now displays a different badge based on the analysis type */}
+                {doc.analysisType === 'timeline' ? (
+                    <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-purple-300 bg-purple-950/50 px-2 py-1 rounded-md">
+                        <Calendar className="w-3 h-3" /> Timeline
+                    </span>
+                ) : (
+                    <div className="flex-shrink-0 flex space-x-2 text-sm">
+                        <span className="flex items-center gap-1 font-semibold text-red-400"><div className="w-2 h-2 rounded-full bg-red-500"></div>{doc.riskCounts?.red || 0}</span>
+                        <span className="flex items-center gap-1 font-semibold text-amber-400"><div className="w-2 h-2 rounded-full bg-amber-500"></div>{doc.riskCounts?.orange || 0}</span>
+                    </div>
+                )}
             </div>
-        </div>
-        <p className="text-slate-400 text-sm mt-2 line-clamp-2">
-            {doc.summary || "Document analysis available"}
-        </p>
-        <p className="text-slate-500 text-xs mt-4">
-            {doc.createdAt?._seconds 
-                ? new Date(doc.createdAt._seconds * 1000).toLocaleDateString()
-                : new Date(doc.createdAt).toLocaleDateString()
-            }
-        </p>
-    </Link>
-);
+            <p className="text-slate-400 text-sm mt-2 line-clamp-2 h-10">{doc.summary}</p>
+            <p className="text-slate-500 text-xs mt-4">
+                {/* This handles both Firestore timestamp formats */}
+                {doc.createdAt?._seconds 
+                    ? new Date(doc.createdAt._seconds * 1000).toLocaleDateString()
+                    : 'Just now'
+                }
+            </p>
+        </Link>
+    );
+};
 
 export default function Dashboard() {
-    const { currentUser } = useAuth(); // Get the logged-in user
-    const navigate = useNavigate();
-    
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [analysisType, setAnalysisType] = useState(''); // This state was missing
     const [errorMessage, setErrorMessage] = useState('');
     const [documents, setDocuments] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+    
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        if (!currentUser) {
-            // Redirect to auth page if user is not logged in
-            navigate('/auth');
-            return;
-        }
-        
+        if (!currentUser) return;
         const fetchDocuments = async () => {
+            setIsLoadingDocs(true);
             try {
-                setIsLoadingDocs(true);
-                // Use the REAL user ID from the auth context
                 const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
-                // Handle both response formats
-                const docs = response.data.documents || response.data || [];
-                setDocuments(docs);
+                setDocuments(response.data);
             } catch (error) {
                 console.error("Failed to fetch documents:", error);
-                // Don't show error for document history - just log it
+                setErrorMessage("Could not load your document history.");
             } finally {
                 setIsLoadingDocs(false);
             }
         };
-        
         fetchDocuments();
-    }, [currentUser, navigate]); // Re-run when the user logs in
+    }, [currentUser]);
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
-        setErrorMessage(''); // Clear previous errors when a new file is selected
+        setErrorMessage('');
     };
 
     const handleUpload = async (type) => {
-    if (!file || !currentUser) return;
-    
-    setIsLoading(true);
-    setAnalysisType(type);
-    setErrorMessage('');
-    
-    const formData = new FormData();
-    formData.append('file', file);
+        if (!file || !currentUser) return;
+        
+        setIsLoading(true);
+        setAnalysisType(type); // This line caused the error
+        setErrorMessage('');
+        
+        const formData = new FormData();
+        formData.append('file', file);
 
-    try {
-        // --- THIS IS THE FIX ---
-        // The URL is now relative, starting with /api/
-        const response = await axios.post(
-            `/api/upload?userId=${currentUser.uid}&analysisType=${type}`, 
-            formData
-        );
-        // --- END OF FIX ---
-        
-        const { document_id, data } = response.data;
-        
-        if (type === 'timeline') {
-            navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
-        } else {
-            navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
-        }
-    } catch (error) {
-        setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
-    } finally {
-        setIsLoading(false);
-        setAnalysisType('');
-        setFile(null);
-    }
-    };
-
-    const refreshDocuments = async () => {
-        if (!currentUser) return;
-        
         try {
-            const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
-            const docs = response.data.documents || response.data || [];
-            setDocuments(docs);
+            const response = await axios.post(`/api/upload?userId=${currentUser.uid}&analysisType=${type}`, formData);
+            const { document_id, data } = response.data;
+            
+            // Add new doc to the top of the list for instant UI update
+            setDocuments(prevDocs => [{ id: document_id, ...data }, ...prevDocs]);
+
+            if (type === 'timeline') {
+                navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
+            } else {
+                navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
+            }
         } catch (error) {
-            console.error("Failed to refresh documents:", error);
+            setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+        } finally {
+            setIsLoading(false);
+            setAnalysisType('');
+            setFile(null); // Reset file input after upload
         }
     };
-
-    // Show loading state while checking authentication
-    if (!currentUser) {
-        return (
-            <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-slate-400">Checking authentication...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8">
             <div className="max-w-6xl mx-auto">
-                <header className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">LawLytics Dashboard</h1>
-                    <p className="text-slate-400">Upload a new document or review your past analyses.</p>
-                    <p className="text-slate-500 text-sm mt-2">Welcome back, {currentUser.email}!</p>
+                <header className="mb-12">
+                    <h1 className="text-4xl font-bold text-white">Dashboard</h1>
+                    <p className="text-slate-400 mt-2">Upload a new document or review your past analyses.</p>
                 </header>
 
-                {/* Upload Section */}
-                <section className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 mb-12 max-w-2xl mx-auto">
-                    <h2 className="text-xl font-semibold mb-6 text-center">Upload New Document</h2>
-                    
-                    <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/50 transition-colors">
-                        <input 
-                            type="file" 
-                            className="hidden" 
-                            id="file-upload" 
-                            onChange={handleFileChange} 
-                            accept=".txt,.pdf" 
-                        />
-                        <label htmlFor="file-upload" className="text-center p-4 w-full h-full flex flex-col items-center justify-center">
-                            {file ? (
-                                <div className="text-center">
-                                    <svg className="mx-auto h-12 w-12 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p className="text-green-400 font-semibold">{file.name}</p>
-                                    <p className="text-slate-500 text-sm mt-1">Click to change file</p>
-                                </div>
-                            ) : (
-                                <div>
-                                    <svg className="mx-auto h-12 w-12 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                    <p className="text-slate-400 mb-1">Drag & drop or click to upload</p>
-                                    <p className="text-slate-500 text-sm">PDF or TXT files only</p>
-                                </div>
-                            )}
+                <section className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 mb-12">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        <label htmlFor="file-upload" className="w-full md:w-1/3 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/50 transition-colors">
+                            <UploadCloud className="w-10 h-10 text-slate-500 mb-2" />
+                            <span className="font-semibold text-slate-300">{file ? "File Selected" : "Choose a file"}</span>
+                            <span className="text-xs text-slate-400 mt-1 truncate w-full text-center px-2">{file ? file.name : "PDF or TXT"}</span>
+                            <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.txt" />
                         </label>
-                    </div>
-
-                    {/* Error Message */}
-                    {errorMessage && (
-                        <div className="mt-4 p-3 text-center bg-red-900/50 border border-red-700 text-red-300 rounded-lg">
-                            <p>{errorMessage}</p>
-                        </div>
-                    )}
-
-                    {/* Upload Button */}
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || isLoading}
-                        className="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {isLoading ? (
-                            <div className="flex items-center justify-center">
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Analyzing...
+                        
+                        <div className="w-full md:w-2/3">
+                            <h2 className="text-xl font-bold mb-4">Choose an Action</h2>
+                            <p className="text-slate-400 text-sm mb-4">Once you've selected a file, choose whether to perform a risk analysis or generate a case timeline.</p>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button onClick={() => handleUpload('risk')} disabled={!file || isLoading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                    {isLoading && analysisType === 'risk' ? 'Analyzing...' : <><BarChart3 className="w-5 h-5" /> Analyze Risks</>}
+                                </button>
+                                <button onClick={() => handleUpload('timeline')} disabled={!file || isLoading} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                    {isLoading && analysisType === 'timeline' ? 'Generating...' : <><Calendar className="w-5 h-5" /> Generate Timeline</>}
+                                </button>
                             </div>
-                        ) : 'Analyze Document'}
-                    </button>
+                            {errorMessage && <p className="text-red-400 text-sm mt-4">{errorMessage}</p>}
+                        </div>
+                    </div>
                 </section>
 
-                {/* Document History Section */}
                 <section>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold">Document History</h2>
-                        <button 
-                            onClick={refreshDocuments}
-                            className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
-                        >
-                            Refresh
-                        </button>
-                    </div>
-                    
+                    <h2 className="text-2xl font-bold mb-6">Document History</h2>
                     {isLoadingDocs ? (
-                        <div className="text-center py-12 bg-slate-800/50 rounded-2xl">
-                            <div className="flex items-center justify-center">
-                                <svg className="animate-spin h-8 w-8 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span className="ml-2 text-slate-400">Loading documents...</span>
-                            </div>
-                        </div>
+                        <p>Loading documents...</p>
                     ) : documents.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {documents.map(doc => (
-                                <DocumentCard key={doc.id} doc={doc} />
-                            ))}
+                            {documents.map(doc => <DocumentCard key={doc.id} doc={doc} />)}
                         </div>
                     ) : (
-                        <div className="text-center py-12 bg-slate-800/50 rounded-2xl border border-slate-700">
-                            <svg className="mx-auto h-16 w-16 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <p className="text-slate-400 text-lg mb-2">No documents yet</p>
-                            <p className="text-slate-500">Upload your first document to get started with legal analysis.</p>
+                        <div className="text-center py-16 bg-slate-800/50 rounded-2xl border border-slate-700">
+                            <p className="text-slate-400">You haven't analyzed any documents yet.</p>
                         </div>
                     )}
                 </section>
