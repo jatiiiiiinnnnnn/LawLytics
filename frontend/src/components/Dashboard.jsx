@@ -37,23 +37,18 @@ const DocumentCard = ({ doc }) => (
 );
 
 export default function Dashboard() {
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth(); // Get the logged-in user
     const navigate = useNavigate();
     
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [analysisType, setAnalysisType] = useState(''); // Added missing state
     const [errorMessage, setErrorMessage] = useState('');
     const [documents, setDocuments] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
 
-    // API base URL - for Vercel monorepo, use relative paths in production
-    const API_BASE_URL = process.env.NODE_ENV === 'production' 
-        ? '' // Empty string for same domain in production
-        : 'http://localhost:8000';
-
     useEffect(() => {
         if (!currentUser) {
+            // Redirect to auth page if user is not logged in
             navigate('/auth');
             return;
         }
@@ -61,7 +56,9 @@ export default function Dashboard() {
         const fetchDocuments = async () => {
             try {
                 setIsLoadingDocs(true);
-                const response = await axios.get(`${API_BASE_URL}/api/documents?userId=${currentUser.uid}`);
+                // Use the REAL user ID from the auth context
+                const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
+                // Handle both response formats
                 const docs = response.data.documents || response.data || [];
                 setDocuments(docs);
             } catch (error) {
@@ -73,64 +70,53 @@ export default function Dashboard() {
         };
         
         fetchDocuments();
-    }, [currentUser, navigate, API_BASE_URL]);
+    }, [currentUser, navigate]); // Re-run when the user logs in
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
-        setErrorMessage('');
+        setErrorMessage(''); // Clear previous errors when a new file is selected
     };
 
-    const handleUpload = async (type = 'analysis') => {
-        if (!file || !currentUser) return;
-        
-        setIsLoading(true);
-        setAnalysisType(type);
-        setErrorMessage('');
-        
-        const formData = new FormData();
-        formData.append('file', file);
+    const handleUpload = async (type) => {
+    if (!file || !currentUser) return;
+    
+    setIsLoading(true);
+    setAnalysisType(type);
+    setErrorMessage('');
+    
+    const formData = new FormData();
+    formData.append('file', file);
 
-        try {
-            const response = await axios.post(
-                `${API_BASE_URL}/api/upload?userId=${currentUser.uid}&analysisType=${type}`, 
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                }
-            );
-            
-            const { document_id, data } = response.data;
-            
-            if (type === 'timeline') {
-                navigate(`/timeline/${document_id}`, { 
-                    state: { timeline: data.timeline, fileName: data.fileName } 
-                });
-            } else {
-                navigate(`/document/${document_id}`, { 
-                    state: { analysis: data.fullAnalysis, fileName: data.fileName } 
-                });
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            setErrorMessage(
-                error.response?.data?.detail || 
-                error.response?.data?.message ||
-                'An error occurred during upload. Please try again.'
-            );
-        } finally {
-            setIsLoading(false);
-            setAnalysisType('');
-            setFile(null);
+    try {
+        // --- THIS IS THE FIX ---
+        // The URL is now relative, starting with /api/
+        const response = await axios.post(
+            `/api/upload?userId=${currentUser.uid}&analysisType=${type}`, 
+            formData
+        );
+        // --- END OF FIX ---
+        
+        const { document_id, data } = response.data;
+        
+        if (type === 'timeline') {
+            navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
+        } else {
+            navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
         }
+    } catch (error) {
+        setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+    } finally {
+        setIsLoading(false);
+        setAnalysisType('');
+        setFile(null);
+    }
     };
 
     const refreshDocuments = async () => {
         if (!currentUser) return;
         
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/documents?userId=${currentUser.uid}`);
+            const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
             const docs = response.data.documents || response.data || [];
             setDocuments(docs);
         } catch (error) {
@@ -199,40 +185,22 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {/* Upload Buttons */}
-                    <div className="mt-6 space-y-3">
-                        <button
-                            onClick={() => handleUpload('analysis')}
-                            disabled={!file || isLoading}
-                            className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {isLoading && analysisType === 'analysis' ? (
-                                <div className="flex items-center justify-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Analyzing...
-                                </div>
-                            ) : 'Analyze Document'}
-                        </button>
-
-                        <button
-                            onClick={() => handleUpload('timeline')}
-                            disabled={!file || isLoading}
-                            className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {isLoading && analysisType === 'timeline' ? (
-                                <div className="flex items-center justify-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Creating Timeline...
-                                </div>
-                            ) : 'Create Timeline'}
-                        </button>
-                    </div>
+                    {/* Upload Button */}
+                    <button
+                        onClick={handleUpload}
+                        disabled={!file || isLoading}
+                        className="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {isLoading ? (
+                            <div className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Analyzing...
+                            </div>
+                        ) : 'Analyze Document'}
+                    </button>
                 </section>
 
                 {/* Document History Section */}
