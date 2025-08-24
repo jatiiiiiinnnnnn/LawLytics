@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Import the useAuth hook
+import { useAuth } from '../context/AuthContext';
+import { FileText, Calendar, UploadCloud, BarChart3 } from 'lucide-react';
 
 const DocumentCard = ({ doc }) => (
     <Link 
@@ -157,7 +158,7 @@ export default function Dashboard() {
         <div className="min-h-screen bg-slate-900 text-white p-8">
             <div className="max-w-6xl mx-auto">
                 <header className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">LexiLens Dashboard</h1>
+                    <h1 className="text-4xl font-bold text-white mb-2">LawLytics Dashboard</h1>
                     <p className="text-slate-400">Upload a new document or review your past analyses.</p>
                     <p className="text-slate-500 text-sm mt-2">Welcome back, {currentUser.email}!</p>
                 </header>

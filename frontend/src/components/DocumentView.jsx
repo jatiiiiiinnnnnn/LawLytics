@@ -34,7 +34,6 @@ import {
     Zap
 } from 'lucide-react';
 
-// --- Clean Helper Components ---
 
 const StatCard = ({ label, value, color, icon: IconComponent, isDark, trend }) => (
     <div className={`${isDark ? 'bg-gray-800/90 border-gray-700/50 hover:bg-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:bg-gray-50'} border backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group`}>
@@ -91,21 +90,63 @@ const RiskProgressBar = ({ score, color, isDark }) => {
     );
 };
 
+const CaseTimeline = ({ events, isDark }) => {
+    if (!events || events.length === 0) {
+        return (
+            <div className="text-center py-16">
+                <div className={`w-20 h-20 ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                    <Calendar className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+                <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>No Timeline Available</h3>
+                <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>The AI could not extract a chronological timeline from this document.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-4">
+            <div className="relative">
+                {events.map((event, index) => (
+                    <div key={index} className={`relative ${index !== events.length - 1 ? 'pb-10' : ''}`}>
+                        {index !== events.length - 1 && <div className={`absolute top-5 left-[11px] w-0.5 h-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}></div>}
+                        <div className="absolute w-6 h-6 bg-blue-500/20 rounded-full mt-2 -left-[1px] border-4 border-blue-500/20 flex items-center justify-center">
+                            <div className={`w-3 h-3 bg-blue-500 rounded-full`}></div>
+                        </div>
+                        <div className="ml-10">
+                            <div className="flex items-center gap-4 mb-2">
+                                <time className={`text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{event.date}</time>
+                                <span className={`text-xs ${isDark ? 'bg-gray-700' : 'bg-gray-100'} ${isDark ? 'text-gray-300' : 'text-gray-700'} px-2.5 py-1 rounded-md flex items-center gap-1.5`}><Users className="w-3 h-3"/>{event.parties}</span>
+                            </div>
+                            <p className={`${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{event.event}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 // --- Main Component ---
 
 export default function DocumentView() {
     const location = useLocation();
     const { id: documentId } = useParams();
+    
+    // FIX 1: Correct state management
     const [analysis, setAnalysis] = useState(location.state?.analysis || null);
+    const [isLoadingData, setIsLoadingData] = useState(!analysis); // Renamed for clarity
+    const [error, setError] = useState('');
 
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [isLoading, setIsLoading] = useState(!analysis);
+    const [isLoading, setIsLoading] = useState(false); // For chat loading
     const [selectedRiskFilter, setSelectedRiskFilter] = useState('all');
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+    const [isDarkMode, setIsDarkMode] = useState(true);
     const [isChatExpanded, setIsChatExpanded] = useState(false);
-    const [error, setError] = useState('');
+
+    const [activeTab, setActiveTab] = useState('clauses');
+    const [timelineData, setTimelineData] = useState(null);
+    const [isTimelineLoading, setIsTimelineLoading] = useState(false);
 
     const chatEndRef = useRef(null);
 
@@ -114,20 +155,43 @@ export default function DocumentView() {
     }, [messages]);
 
     useEffect(() => {
-        // If analysis data is already present, no need to fetch.
+        // FIX 2: Only fetch if no analysis data is present
         if (analysis) {
+            console.log("Analysis data already present:", analysis);
             setIsLoadingData(false);
             return;
         }
 
+        console.log("No analysis data, fetching document details for ID:", documentId);
+        
         const fetchDocumentDetails = async () => {
             try {
+                setIsLoadingData(true);
+                console.log("Making API call to:", `http://localhost:8000/api/document/${documentId}`);
+                
                 const response = await axios.get(`http://localhost:8000/api/document/${documentId}`);
-                // The full analysis is stored in the 'fullAnalysis' field
-                setAnalysis(response.data.fullAnalysis); 
+                console.log("API Response:", response.data);
+                
+                // FIX 3: Check the actual structure of your API response
+                // You might need to adjust this based on what your backend actually returns
+                if (response.data.fullAnalysis) {
+                    setAnalysis(response.data.fullAnalysis);
+                } else if (response.data.analysis) {
+                    setAnalysis(response.data.analysis);
+                } else if (Array.isArray(response.data)) {
+                    setAnalysis(response.data);
+                } else {
+                    console.error("Unexpected API response structure:", response.data);
+                    setError("Invalid data format received from server");
+                }
             } catch (err) {
                 console.error("Failed to fetch document details:", err);
-                setError("Could not load document analysis. Please go back to the dashboard and try again.");
+                console.error("Error details:", {
+                    message: err.message,
+                    response: err.response?.data,
+                    status: err.response?.status
+                });
+                setError(`Could not load document analysis: ${err.response?.data?.message || err.message}`);
             } finally {
                 setIsLoadingData(false);
             }
@@ -135,6 +199,13 @@ export default function DocumentView() {
 
         fetchDocumentDetails();
     }, [documentId, analysis]);
+
+    // FIX 4: Add debugging for analysis data
+    useEffect(() => {
+        console.log("Current analysis state:", analysis);
+        console.log("Is loading data:", isLoadingData);
+        console.log("Error state:", error);
+    }, [analysis, isLoadingData, error]);
 
     const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);
@@ -163,12 +234,61 @@ export default function DocumentView() {
         }
     };
 
+    // FIX 5: Better loading and error states
     if (isLoadingData) {
-        return <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">Loading document analysis...</div>;
+        return (
+            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-lg">Loading document analysis...</p>
+                    <p className="text-sm text-gray-400 mt-2">Document ID: {documentId}</p>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">{error}</div>;
+        return (
+            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                    <h2 className="text-2xl font-bold mb-4">Error Loading Document</h2>
+                    <p className="text-gray-300 mb-6">{error}</p>
+                    <button 
+                        onClick={() => window.history.back()} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // FIX 6: Better check for analysis data
+    if (!analysis || !Array.isArray(analysis) || analysis.length === 0) {
+        return (
+            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <div className="text-yellow-500 text-6xl mb-4">📄</div>
+                    <h2 className="text-2xl font-bold mb-4">No Analysis Data</h2>
+                    <p className="text-gray-300 mb-6">
+                        No analysis data found for this document. This might happen if:
+                    </p>
+                    <ul className="text-gray-400 text-left mb-6">
+                        <li>• The document analysis failed</li>
+                        <li>• The document was not found</li>
+                        <li>• There was a server error</li>
+                    </ul>
+                    <button 
+                        onClick={() => window.history.back()} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const riskStats = {

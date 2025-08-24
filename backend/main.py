@@ -395,6 +395,52 @@ async def chat_with_document(request: dict):
         print(f"❌ Chat error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate answer.")
 
+# --- Timeline Generation Endpoint ---
+@app.post("/api/generate-timeline")
+async def generate_timeline(request: dict):
+    doc_id = request.get('document_id')
+    if not doc_id:
+        raise HTTPException(status_code=400, detail="Document ID is required.")
+
+    try:
+        # Try Firestore first, then fallback to memory
+        document_data = get_document_from_firestore(doc_id)
+        if not document_data and doc_id in memory_db:
+            document_data = memory_db[doc_id]
+        
+        if not document_data:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        
+        full_analysis = document_data.get('fullAnalysis', [])
+        # Reconstruct the document text from the original_text of all clauses
+        document_text = "\n".join([clause.get('original_text', '') for clause in full_analysis])
+
+        if not document_text.strip():
+            raise HTTPException(status_code=400, detail="Document has no text content to analyze.")
+
+        # Call the AI agent function to generate timeline
+        timeline_events = gemini_service.generate_timeline_from_text(document_text)
+
+        # Save the generated timeline back to the document (if Firestore is available)
+        if timeline_events and firestore_db:
+            try:
+                doc_ref = firestore_db.collection('documents').document(doc_id)
+                doc_ref.update({"timeline": timeline_events})
+            except Exception as e:
+                print(f"⚠️ Failed to save timeline to Firestore: {e}")
+                # Also update memory storage if document exists there
+                if doc_id in memory_db:
+                    memory_db[doc_id]["timeline"] = timeline_events
+
+        # Also update memory storage if document exists there
+        elif timeline_events and doc_id in memory_db:
+            memory_db[doc_id]["timeline"] = timeline_events
+
+        return {"timeline": timeline_events}
+    except Exception as e:
+        print(f"💥 Timeline generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate case timeline.")
+
 # --- Health check endpoint ---
 @app.get("/health")
 async def health_check():
