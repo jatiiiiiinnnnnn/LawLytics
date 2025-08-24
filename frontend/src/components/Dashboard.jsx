@@ -8,6 +8,13 @@ const DocumentCard = ({ doc }) => {
     // This component now correctly links to the timeline or document view based on analysisType
     const linkPath = doc.analysisType === 'timeline' ? `/timeline/${doc.id}` : `/document/${doc.id}`;
 
+    const formatDate = (timestamp) => {
+        if (!timestamp) return 'Just now';
+        // Handles both Firestore Timestamps (have _seconds) and ISO strings (from new uploads)
+        const date = timestamp._seconds ? new Date(timestamp._seconds * 1000) : new Date(timestamp);
+        return date.toLocaleDateString();
+    };
+
     return (
         <Link to={linkPath} className="block bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex justify-between items-start">
@@ -26,11 +33,7 @@ const DocumentCard = ({ doc }) => {
             </div>
             <p className="text-slate-400 text-sm mt-2 line-clamp-2 h-10">{doc.summary}</p>
             <p className="text-slate-500 text-xs mt-4">
-                {/* This handles both Firestore timestamp formats */}
-                {doc.createdAt?._seconds 
-                    ? new Date(doc.createdAt._seconds * 1000).toLocaleDateString()
-                    : 'Just now'
-                }
+                {formatDate(doc.createdAt)}
             </p>
         </Link>
     );
@@ -92,7 +95,15 @@ export default function Dashboard() {
                 navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
             }
         } catch (error) {
-            setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+            // Enhanced error handling to provide more specific feedback
+            console.error("Upload failed:", error.response || error);
+            if (error.response?.status === 504) {
+                 setErrorMessage('The analysis is taking too long and timed out. Please try a smaller document.');
+            } else if (error.response?.status === 500) {
+                 setErrorMessage('A server error occurred. Please check the Vercel logs for more details.');
+            } else {
+                setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+            }
         } finally {
             setIsLoading(false);
             setAnalysisType('');
