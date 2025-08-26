@@ -33,7 +33,7 @@ export default function TimelineView() {
 
         const fetchTimeline = async () => {
             try {
-                const response = await axios.get(`http://localhost:8000/api/document/${documentId}`);
+                const response = await axios.get(`/api/document/${documentId}`);
                 setTimeline(response.data.timeline || []);
                 setFileName(response.data.fileName || 'Case Timeline');
             } catch (err) {

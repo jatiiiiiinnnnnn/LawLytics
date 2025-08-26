@@ -150,12 +150,13 @@ export default function DocumentView() {
 
     const chatEndRef = useRef(null);
 
-    useEffect(() => {
+   useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Fixed useEffect to prevent infinite loops
     useEffect(() => {
-        // FIX 2: Only fetch if no analysis data is present
+        // If analysis data was passed from the dashboard, don't fetch again
         if (analysis) {
             console.log("Analysis data already present:", analysis);
             setIsLoadingData(false);
@@ -172,8 +173,7 @@ export default function DocumentView() {
                 const response = await axios.get(`/api/document/${documentId}`);
                 console.log("API Response:", response.data);
                 
-                // FIX 3: Check the actual structure of your API response
-                // You might need to adjust this based on what your backend actually returns
+                // Handle different response structures from your backend
                 if (response.data.fullAnalysis) {
                     setAnalysis(response.data.fullAnalysis);
                 } else if (response.data.analysis) {
@@ -191,14 +191,14 @@ export default function DocumentView() {
                     response: err.response?.data,
                     status: err.response?.status
                 });
-                setError(`Could not load document analysis: ${err.response?.data?.message || err.message}`);
+                setError(`Could not load document analysis: ${err.response?.data?.detail || err.message}`);
             } finally {
                 setIsLoadingData(false);
             }
         };
 
         fetchDocumentDetails();
-    }, [documentId, analysis]);
+    }, [documentId]);
 
     // FIX 4: Add debugging for analysis data
     useEffect(() => {
