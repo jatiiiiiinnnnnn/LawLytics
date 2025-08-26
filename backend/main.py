@@ -10,7 +10,7 @@ from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from services import gemini_service
+from backend.services import gemini_service
 from datetime import datetime, timezone
 
 # Fix for Vercel Blob import
