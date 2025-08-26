@@ -41,7 +41,7 @@ const DocumentCard = ({ doc }) => {
 export default function Dashboard() {
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [analysisType, setAnalysisType] = useState(''); // FIX: This state variable is now correctly defined
+    const [analysisType, setAnalysisType] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [documents, setDocuments] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
@@ -55,12 +55,11 @@ export default function Dashboard() {
             setIsLoadingDocs(true);
             try {
                 const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
-                // Ensure we always have an array to prevent crashes
                 setDocuments(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
                 console.error("Failed to fetch documents:", error);
                 setErrorMessage("Could not load your document history.");
-                setDocuments([]); // Set to empty array on error
+                setDocuments([]);
             } finally {
                 setIsLoadingDocs(false);
             }
@@ -85,12 +84,21 @@ export default function Dashboard() {
 
         try {
             const response = await axios.post(`/api/upload?userId=${currentUser.uid}&analysisType=${type}`, formData);
-            const { document_id, data } = response.data;
             
-            // Add new doc to the top of the list for instant UI update
+            // --- THIS IS THE FIX ---
+            // This robustly handles the response structure from the backend.
+            const responseData = response.data;
+            const document_id = responseData.document_id;
+            // The actual analysis/timeline data is in a nested 'data' object.
+            const data = responseData.data; 
+            
+            if (!document_id || !data) {
+                throw new Error("Invalid response structure from server.");
+            }
+            // --- END OF FIX ---
+            
             setDocuments(prevDocs => [{ id: document_id, ...data }, ...prevDocs]);
 
-            // FIX: Correctly access the nested data object for navigation state
             if (type === 'timeline') {
                 navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
             } else {
@@ -98,7 +106,7 @@ export default function Dashboard() {
             }
         } catch (error) {
             console.error("Upload failed:", error.response || error);
-            setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
+            setErrorMessage(error.response?.data?.detail || 'An unexpected error occurred during upload.');
         } finally {
             setIsLoading(false);
             setAnalysisType('');
