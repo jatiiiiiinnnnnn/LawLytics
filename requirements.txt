@@ -1,11 +1,7 @@
 fastapi
-uvicorn
-python-dotenv
-google-cloud-aiplatform
-google-cloud-documentai
-google-api-python-client
-pinecone
-sentence-transformers
+firebase-admin
+vercel-blob
+PyMuPDF
+google-generativeai
 pydantic
 python-multipart
-PyMuPDF
