@@ -1,4 +1,4 @@
-# backend/main.py - Integrated Version
+# backend/main.py - Final Integrated Version
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -200,8 +200,8 @@ def upload_to_blob(file_name: str, contents: bytes) -> str | None:
         return None
     
     try:
-        # Upload with random suffix to prevent overwrites
-        blob_result = put(file_name, contents, add_random_suffix=True) # type: ignore
+        # Upload with automatic random suffix handling
+        blob_result = put(file_name, contents) # type: ignore
         blob_url = blob_result['url']
         print(f"✅ File uploaded to blob: {blob_url}")
         return blob_url
@@ -226,11 +226,11 @@ async def get_documents(userId: str = Query(..., description="User ID to fetch d
             # Sort by creation date
             documents.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
         
-        return {"documents": documents}
+        return documents  # Return array directly to match frontend expectations
     except Exception as e:
         print(f"❌ Error in get_documents endpoint: {e}")
         # Return empty list instead of error for better UX
-        return {"documents": []}
+        return []
 
 # --- Endpoint to fetch a single document's full analysis ---
 @app.get("/api/document/{doc_id}")
@@ -247,11 +247,15 @@ async def get_document_details(doc_id: str):
     
     return document_data
 
-# --- Enhanced Upload endpoint ---
+# --- Enhanced Upload endpoint with analysisType support ---
 @app.post("/api/upload")
-async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile = File(...)):
-    if not userId:
-        raise HTTPException(status_code=400, detail="User ID is required.")
+async def upload_and_analyze_document(
+    userId: str = Query(...), 
+    analysisType: str = Query(...), 
+    file: UploadFile = File(...)
+):
+    if not userId or not analysisType:
+        raise HTTPException(status_code=400, detail="User ID and Analysis Type are required.")
         
     try:
         contents = await file.read()
@@ -271,75 +275,101 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
         else:
             raise HTTPException(status_code=415, detail="Unsupported file type.")
 
-        # 3. Extract meaningful clauses
-        clauses_to_analyze = [
-            cleaned for clause in full_text.split('\n') 
-            if (cleaned := clause.strip()) and len(cleaned) > 25 and not cleaned.isdigit()
-        ]
-
-        if not clauses_to_analyze:
-            raise HTTPException(status_code=400, detail="No meaningful clauses found.")
-        
-        print(f"🔍 Found {len(clauses_to_analyze)} clauses to analyze.")
-
-        # 4. Perform analysis using async logic with chunking
-        chunk_size = 10
-        chunks = [clauses_to_analyze[i:i + chunk_size] for i in range(0, len(clauses_to_analyze), chunk_size)]
-        print(f"📦 Split into {len(chunks)} chunks of size ~{chunk_size}.")
-
-        # Use semaphore to limit concurrent requests
-        semaphore = asyncio.Semaphore(12)
-        
-        async def process_with_semaphore(chunk):
-            async with semaphore:
-                await asyncio.sleep(1)  # Rate limiting
-                return await analyze_chunk(chunk)
-
-        tasks = [process_with_semaphore(chunk) for chunk in chunks]
-        chunk_results_list = await asyncio.gather(*tasks)
-
-        # Flatten results
-        all_results = [item for sublist in chunk_results_list for item in sublist]
-
-        # Combine results with original text
-        analysis_results = []
-        for i, clause_text in enumerate(clauses_to_analyze):
-            analysis = all_results[i] if i < len(all_results) else create_fallback_analysis("Processing incomplete")
-            analysis['original_text'] = clause_text
-            analysis_results.append(analysis)
-
-        # 5. Generate summary and risk counts
-        red_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Red')
-        orange_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Orange')
-        green_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Green')
-        
-        # Generate a brief summary using Gemini
-        try:
-            summary_prompt = f"Summarize the following legal document's purpose in one friendly sentence: {full_text[:2000]}"
-            response = await gemini_service.model.generate_content_async(summary_prompt)
-            brief_summary = response.text.strip()
-        except Exception as e:
-            print(f"⚠️ Summary generation failed: {e}")
-            brief_summary = f"Legal document analysis for {file_name}"
-
-        # 6. Prepare document data for storage
+        # Base document data
         document_data = {
             "userId": userId,
             "fileName": file_name,
             "blobUrl": blob_url,
             "createdAt": datetime.now(timezone.utc),
-            "summary": brief_summary,
-            "riskCounts": {
-                "red": red_count,
-                "orange": orange_count,
-                "green": green_count,
-                "total": len(analysis_results)
-            },
-            "fullAnalysis": analysis_results,
+            "analysisType": analysisType,
             "fullText": full_text
         }
 
-        # 7. Save metadata to Firestore (with fallback to memory)
+        # 3. Perform analysis based on the requested type
+        if analysisType == 'risk':
+            # Extract meaningful clauses
+            clauses_to_analyze = [
+                cleaned for clause in full_text.split('\n') 
+                if (cleaned := clause.strip()) and len(cleaned) > 25 and not cleaned.isdigit()
+            ]
+
+            if not clauses_to_analyze:
+                raise HTTPException(status_code=400, detail="No meaningful clauses found.")
+            
+            print(f"🔍 Found {len(clauses_to_analyze)} clauses to analyze.")
+
+            # Perform analysis using async logic with chunking
+            chunk_size = 10
+            chunks = [clauses_to_analyze[i:i + chunk_size] for i in range(0, len(clauses_to_analyze), chunk_size)]
+            print(f"📦 Split into {len(chunks)} chunks of size ~{chunk_size}.")
+
+            # Use semaphore to limit concurrent requests
+            semaphore = asyncio.Semaphore(12)
+            
+            async def process_with_semaphore(chunk):
+                async with semaphore:
+                    await asyncio.sleep(1)  # Rate limiting
+                    return await analyze_chunk(chunk)
+
+            tasks = [process_with_semaphore(chunk) for chunk in chunks]
+            chunk_results_list = await asyncio.gather(*tasks)
+
+            # Flatten results
+            all_results = [item for sublist in chunk_results_list for item in sublist]
+
+            # Combine results with original text
+            analysis_results = []
+            for i, clause_text in enumerate(clauses_to_analyze):
+                analysis = all_results[i] if i < len(all_results) else create_fallback_analysis("Processing incomplete")
+                analysis['original_text'] = clause_text
+                analysis_results.append(analysis)
+
+            # Calculate risk counts
+            red_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Red')
+            orange_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Orange')
+            green_count = sum(1 for r in analysis_results if r.get('risk_level') == 'Green')
+            
+            # Generate a brief summary using Gemini
+            try:
+                summary_prompt = f"Summarize the following legal document's purpose in one friendly sentence: {full_text[:2000]}"
+                response = await gemini_service.model.generate_content_async(summary_prompt)
+                brief_summary = response.text.strip()
+            except Exception as e:
+                print(f"⚠️ Summary generation failed: {e}")
+                brief_summary = f"Legal document analysis for {file_name}"
+
+            document_data.update({
+                "fullAnalysis": analysis_results,
+                "summary": brief_summary,
+                "riskCounts": {
+                    "red": red_count,
+                    "orange": orange_count,
+                    "green": green_count,
+                    "total": len(analysis_results)
+                }
+            })
+            
+        elif analysisType == 'timeline':
+            try:
+                # Generate timeline using gemini service
+                timeline_events = gemini_service.generate_timeline_from_text(full_text)
+                
+                document_data.update({
+                    "timeline": timeline_events,
+                    "summary": f"Generated a timeline with {len(timeline_events)} key events.",
+                    "riskCounts": {"red": 0, "orange": 0}  # Timelines don't have risk counts
+                })
+            except Exception as e:
+                print(f"⚠️ Timeline generation failed: {e}")
+                document_data.update({
+                    "timeline": [],
+                    "summary": "Timeline generation failed",
+                    "riskCounts": {"red": 0, "orange": 0}
+                })
+        else:
+            raise HTTPException(status_code=400, detail="Invalid analysis type. Must be 'risk' or 'timeline'.")
+
+        # 4. Save metadata to Firestore (with fallback to memory)
         print(f"💾 Saving metadata to Firestore for user {userId}...")
         doc_id = save_document_to_firestore(document_data)
         
@@ -349,8 +379,13 @@ async def upload_and_analyze_document(userId: str = Query(...), file: UploadFile
             memory_db[doc_id] = document_data
             print(f"✅ Document {doc_id} saved to memory (fallback)")
 
-        print(f"✅ Successfully processed document with {len(analysis_results)} clauses.")
-        return {"document_id": doc_id, "analysis": analysis_results}
+        print(f"✅ Successfully processed document with analysis type: {analysisType}")
+        
+        # Return the structure expected by frontend
+        return {
+            "document_id": doc_id, 
+            "data": document_data
+        }
 
     except HTTPException as e:
         raise e
