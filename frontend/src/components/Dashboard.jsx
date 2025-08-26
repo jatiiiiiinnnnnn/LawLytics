@@ -5,12 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import { FileText, Calendar, UploadCloud, BarChart3 } from 'lucide-react';
 
 const DocumentCard = ({ doc }) => {
-    // This component now correctly links to the timeline or document view based on analysisType
+    // This component correctly links to the timeline or document view based on analysisType
     const linkPath = doc.analysisType === 'timeline' ? `/timeline/${doc.id}` : `/document/${doc.id}`;
 
     const formatDate = (timestamp) => {
         if (!timestamp) return 'Just now';
-        // Handles both Firestore Timestamps (have _seconds) and ISO strings (from new uploads)
+        // Handles both Firestore Timestamps (which have a _seconds property) and ISO strings
         const date = timestamp._seconds ? new Date(timestamp._seconds * 1000) : new Date(timestamp);
         return date.toLocaleDateString();
     };
@@ -19,7 +19,6 @@ const DocumentCard = ({ doc }) => {
         <Link to={linkPath} className="block bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex justify-between items-start">
                 <h3 className="font-bold text-lg text-white group-hover:text-blue-400 pr-4 line-clamp-1">{doc.fileName}</h3>
-                {/* It now displays a different badge based on the analysis type */}
                 {doc.analysisType === 'timeline' ? (
                     <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-purple-300 bg-purple-950/50 px-2 py-1 rounded-md">
                         <Calendar className="w-3 h-3" /> Timeline
@@ -42,7 +41,7 @@ const DocumentCard = ({ doc }) => {
 export default function Dashboard() {
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [analysisType, setAnalysisType] = useState(''); // This state was missing
+    const [analysisType, setAnalysisType] = useState(''); // FIX: This state variable is now correctly defined
     const [errorMessage, setErrorMessage] = useState('');
     const [documents, setDocuments] = useState([]);
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
@@ -56,10 +55,12 @@ export default function Dashboard() {
             setIsLoadingDocs(true);
             try {
                 const response = await axios.get(`/api/documents?userId=${currentUser.uid}`);
-                setDocuments(response.data);
+                // Ensure we always have an array to prevent crashes
+                setDocuments(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
                 console.error("Failed to fetch documents:", error);
                 setErrorMessage("Could not load your document history.");
+                setDocuments([]); // Set to empty array on error
             } finally {
                 setIsLoadingDocs(false);
             }
@@ -89,25 +90,19 @@ export default function Dashboard() {
             // Add new doc to the top of the list for instant UI update
             setDocuments(prevDocs => [{ id: document_id, ...data }, ...prevDocs]);
 
+            // FIX: Correctly access the nested data object for navigation state
             if (type === 'timeline') {
                 navigate(`/timeline/${document_id}`, { state: { timeline: data.timeline, fileName: data.fileName } });
             } else {
                 navigate(`/document/${document_id}`, { state: { analysis: data.fullAnalysis, fileName: data.fileName } });
             }
         } catch (error) {
-            // Enhanced error handling to provide more specific feedback
             console.error("Upload failed:", error.response || error);
-            if (error.response?.status === 504) {
-                 setErrorMessage('The analysis is taking too long and timed out. Please try a smaller document.');
-            } else if (error.response?.status === 500) {
-                 setErrorMessage('A server error occurred. Please check the Vercel logs for more details.');
-            } else {
-                setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
-            }
+            setErrorMessage(error.response?.data?.detail || 'An error occurred during upload.');
         } finally {
             setIsLoading(false);
             setAnalysisType('');
-            setFile(null); // Reset file input after upload
+            setFile(null);
         }
     };
 
