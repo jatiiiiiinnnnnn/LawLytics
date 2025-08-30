@@ -123,7 +123,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'teal' }) => (
         </div>
         <div>
             <p className="text-sm text-slate-400">{title}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-1xl font-bold text-white">{value}</p>
         </div>
     </div>
 );
