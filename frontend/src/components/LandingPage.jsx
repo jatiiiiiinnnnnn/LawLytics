@@ -1,484 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { 
-    Upload, FileText, MessageSquare, Calendar, Shield, Search, 
-    ArrowRight, Play, CheckCircle, Star, Zap, Users, Award,
-    ChevronRight, Download, Share2, BarChart, Eye, Clock
-} from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-// Enhanced Feature Card Component
-const EnhancedFeatureCard = ({ illustration, icon, title, children, delay = 0 }) => {
-    const [isVisible, setIsVisible] = useState(false);
-    
-    useEffect(() => {
-        const timer = setTimeout(() => setIsVisible(true), delay * 100);
-        return () => clearTimeout(timer);
-    }, [delay]);
-
-    return (
-        <div className={`group relative bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-700 hover:border-teal-400/50 hover:bg-slate-700/20 hover:transform hover:scale-105 hover:-translate-y-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="relative z-10">
-                {/* Icon */}
-                <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                    {icon}
-                </div>
-                
-                {/* Title */}
-                <h4 className="text-xl font-bold text-white mb-4 group-hover:text-teal-300 transition-colors duration-300">
-                    {title}
-                </h4>
-                
-                {/* Description */}
-                <p className="text-purple-200/80 leading-relaxed group-hover:text-purple-200 transition-colors duration-300">
-                    {children}
-                </p>
-            </div>
-            
-            {/* Hover glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-        </div>
-    );
-};
-
-// Floating icons for hero background
-const FloatingIcon = ({ icon: Icon, delay, size = "w-8 h-8" }) => (
-    <div 
-        className={`absolute text-teal-300/20 ${size} animate-float`}
-        style={{ 
-            animationDelay: `${delay}s`,
-            left: `${Math.random() * 80 + 10}%`,
-            top: `${Math.random() * 80 + 10}%`
-        }}
-    >
-        <Icon />
-    </div>
+// Icon Components
+const UploadIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
 );
-
-// Hero Illustration Component
+const MapIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.447-.894L15 7m0 10l-6-3m6 3V7" /></svg>
+);
+const ChatIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+);
+const TimelineIcon = () => (
+    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+);
 const HeroIllustration = () => (
     <div className="relative w-full h-full flex items-center justify-center">
-        {/* Background floating icons */}
-        <FloatingIcon icon={FileText} delay={0} />
-        <FloatingIcon icon={Shield} delay={1} />
-        <FloatingIcon icon={Calendar} delay={2} />
-        <FloatingIcon icon={BarChart} delay={3} />
-        <FloatingIcon icon={Search} delay={4} />
-        
-        {/* Central illustration */}
-        <div className="relative w-80 h-80 bg-gradient-to-br from-teal-500/20 to-purple-500/20 rounded-3xl border border-white/20 backdrop-blur-sm">
-            <div className="absolute inset-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-white/10">
-                <div className="p-6 h-full flex flex-col justify-center">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                            <div className="h-2 bg-slate-600 rounded flex-1"></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-                            <div className="h-2 bg-slate-600 rounded flex-1"></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-                            <div className="h-2 bg-slate-600 rounded flex-1"></div>
-                        </div>
-                        <div className="mt-6 p-4 bg-teal-500/20 rounded-lg border border-teal-400/30">
-                            <Calendar className="w-8 h-8 text-teal-300 mx-auto animate-pulse" />
-                        </div>
-                    </div>
+        <div className="relative">
+            <div className="absolute -rotate-6 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm rounded-2xl w-72 h-80 border border-white/20"></div>
+            <div className="absolute rotate-3 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-2xl w-72 h-80 border border-white/20 transform translate-x-2 translate-y-2"></div>
+            <div className="relative bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-md rounded-2xl w-72 h-80 border border-white/30 p-6 shadow-2xl">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                 </div>
+                <div className="space-y-3">
+                    <div className="h-2 bg-white/40 rounded w-full"></div>
+                    <div className="h-2 bg-white/30 rounded w-4/5"></div>
+                    <div className="h-2 bg-red-400/60 rounded w-full animate-pulse"></div>
+                    <div className="h-2 bg-white/30 rounded w-3/4"></div>
+                    <div className="h-2 bg-amber-400/60 rounded w-full animate-pulse"></div>
+                    <div className="h-2 bg-white/30 rounded w-5/6"></div>
+                </div>
+                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg">AI Analyzed</div>
+            </div>
+            <div className="absolute -right-8 top-10 bg-red-500/80 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-full animate-bounce">Risk Found</div>
+            <div className="absolute -left-8 bottom-20 bg-teal-500/80 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-full animate-bounce animation-delay-1000">Safe Clause</div>
+        </div>
+    </div>
+);
+
+// Feature illustration components
+const UploadIllustration = () => (
+    <div className="w-32 h-32 mx-auto mb-6 relative">
+        <div className="w-full h-full bg-gradient-to-br from-teal-400/20 to-purple-400/20 rounded-3xl border-2 border-dashed border-teal-400/40 flex items-center justify-center">
+            <div className="text-center"><div className="w-12 h-12 bg-teal-400/30 rounded-2xl flex items-center justify-center mx-auto mb-2"><UploadIcon /></div><div className="text-xs text-teal-300 font-medium">Drop Files</div></div>
+        </div>
+        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"><svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg></div>
+    </div>
+);
+
+const RiskMapIllustration = () => (
+    <div className="w-32 h-32 mx-auto mb-6 relative"><div className="w-full h-full bg-gradient-to-br from-red-400/10 to-amber-400/10 rounded-3xl border border-red-400/20 p-4"><div className="grid grid-cols-3 gap-2 h-full"><div className="bg-green-400/30 rounded"></div><div className="bg-red-500/50 rounded animate-pulse"></div><div className="bg-green-400/30 rounded"></div><div className="bg-amber-400/40 rounded animate-pulse animation-delay-500"></div><div className="bg-green-400/30 rounded"></div><div className="bg-green-400/30 rounded"></div><div className="bg-green-400/30 rounded"></div><div className="bg-red-500/50 rounded animate-pulse animation-delay-1000"></div><div className="bg-green-400/30 rounded"></div></div></div></div>
+);
+
+const ChatIllustration = () => (
+    <div className="w-32 h-32 mx-auto mb-6 relative"><div className="w-full h-full bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-3xl border border-blue-400/20 p-4 flex flex-col justify-end"><div className="space-y-2"><div className="bg-blue-500/30 rounded-2xl px-3 py-2 text-xs text-blue-200 self-start">What does clause 5 mean?</div><div className="bg-teal-500/30 rounded-2xl px-3 py-2 text-xs text-teal-200 self-end">It limits liability...</div><div className="flex items-center gap-1"><div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div><div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce animation-delay-200"></div><div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce animation-delay-400"></div></div></div></div></div>
+);
+
+const TimelineIllustration = () => (
+    <div className="w-32 h-32 mx-auto mb-6 relative">
+        <div className="w-full h-full bg-gradient-to-br from-purple-400/10 to-blue-400/10 rounded-3xl border border-purple-400/20 p-4 flex items-center justify-center">
+            <div className="relative w-full h-full">
+                <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-purple-400/50"></div>
+                <div className="absolute top-2 left-1/2 w-4 h-4 rounded-full bg-purple-500 border-2 border-slate-800 -translate-x-1/2"></div>
+                <div className="absolute top-10 left-1/2 w-4 h-4 rounded-full bg-teal-500 border-2 border-slate-800 -translate-x-1/2 animate-pulse"></div>
+                <div className="absolute bottom-2 left-1/2 w-4 h-4 rounded-full bg-purple-500 border-2 border-slate-800 -translate-x-1/2"></div>
             </div>
         </div>
     </div>
 );
 
-// Stats Counter Component
-const StatsCounter = ({ end, label, icon: Icon }) => {
-    const [count, setCount] = useState(0);
-    
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCount(prev => {
-                if (prev < end) {
-                    return Math.min(prev + Math.ceil(end / 50), end);
-                }
-                clearInterval(timer);
-                return end;
-            });
-        }, 50);
-        
-        return () => clearInterval(timer);
-    }, [end]);
-    
-    return (
-        <div className="text-center group">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Icon className="w-8 h-8 text-teal-300" />
-            </div>
-            <div className="text-3xl font-bold text-white mb-2">{count.toLocaleString()}+</div>
-            <div className="text-purple-200/80">{label}</div>
+const EnhancedFeatureCard = ({ illustration, icon, title, children }) => (
+    <div className="bg-white/5 backdrop-blur-md p-8 rounded-2xl border border-white/10 group transition-all duration-300 hover:border-teal-400/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-teal-400/10 text-center">
+        {illustration}
+        <div className="bg-teal-400/10 text-teal-300 w-16 h-16 rounded-xl flex items-center justify-center mb-6 mx-auto group-hover:bg-teal-400/20 transition-colors duration-300">
+            {icon}
         </div>
-    );
-};
+        <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
+        <p className="text-purple-200/80 leading-relaxed">{children}</p>
+    </div>
+);
 
-// Main Landing Page Component
 export default function LandingPage() {
-    const [currentTestimonial, setCurrentTestimonial] = useState(0);
-    
-    const testimonials = [
-        {
-            text: "LawLytics saved me hours of document review. The timeline feature is incredible!",
-            author: "Sarah Chen",
-            role: "Corporate Lawyer",
-            rating: 5
-        },
-        {
-            text: "Finally, a tool that makes legal documents accessible to everyone on our team.",
-            author: "Michael Rodriguez",
-            role: "Startup Founder",
-            rating: 5
-        },
-        {
-            text: "The AI risk analysis caught issues our team missed. Absolutely essential.",
-            author: "Jennifer Park",
-            role: "Contract Manager",
-            rating: 5
-        }
-    ];
-    
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentTestimonial(prev => (prev + 1) % testimonials.length);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, []);
+  return (
+    <div className="bg-[#0D0B1A] text-white min-h-screen font-sans overflow-x-hidden">
+      {/* Background Effects */}
+      <div className="fixed top-0 left-0 w-full h-full bg-gradient-to-br from-[#0D0B1A] via-[#1A113C] to-[#0D0B1A] pointer-events-none"></div>
+      <div className="fixed top-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+      <div className="fixed bottom-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
 
-    return (
-        <div className="bg-[#0D0B1A] text-white min-h-screen font-sans overflow-x-hidden">
-            {/* Enhanced Background Effects */}
-            <div className="fixed top-0 left-0 w-full h-full bg-gradient-to-br from-[#0D0B1A] via-[#1A113C] to-[#0D0B1A] pointer-events-none"></div>
-            <div className="fixed top-[-20%] left-[-10%] w-[40rem] h-[40rem] bg-purple-600/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
-            <div className="fixed bottom-[-20%] right-[-10%] w-[40rem] h-[40rem] bg-teal-500/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-gradient-to-r from-purple-600/5 to-teal-500/5 rounded-full blur-3xl animate-spin-slow pointer-events-none"></div>
+      {/* Content Container */}
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <main className="container mx-auto px-6 py-20 md:py-32">
+          <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-12">
+            <div className="text-center lg:text-left">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
+                Turn Complex Contracts into
+                <br />
+                <span className="bg-gradient-to-r from-teal-400 to-purple-400 text-transparent bg-clip-text">
+                  Simple Clarity.
+                </span>
+              </h2>
+              <p className="text-lg text-purple-200/80 max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+                LawLytics is your AI-powered legal co-pilot, designed to decode legal jargon, highlight critical risks, and provide instant, understandable answers about any document.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link 
+                  to="/dashboard" 
+                  className="bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:text-white font-bold text-lg px-8 py-4 rounded-full hover:from-teal-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-teal-500/30 no-underline inline-block text-center"
+                >
+                  Analyze a Document
+                </Link>
 
-            {/* Content Container */}
-            <div className="relative z-10">
-                {/* Navigation Bar */}
-                <nav className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
-                    <div className="container mx-auto px-6 py-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-white" />
-                                </div>
-                                <span className="text-xl font-bold text-white">LawLytics</span>
-                            </div>
-                            <div className="hidden md:flex items-center gap-8">
-                                <a href="#features" className="text-purple-200/80 hover:text-white transition-colors">Features</a>
-                                <a href="#how-it-works" className="text-purple-200/80 hover:text-white transition-colors">How It Works</a>
-                                <a href="#testimonials" className="text-purple-200/80 hover:text-white transition-colors">Testimonials</a>
-                                <button className="bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold px-6 py-2 rounded-full hover:from-teal-600 hover:to-teal-700 transition-all duration-300">
-                                    Get Started
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
+                <button className="border-2 border-white/20 text-white font-semibold text-lg px-8 py-4 rounded-full hover:border-teal-400/50 hover:bg-white/5 transition-all duration-300">
+                  Watch Demo
+                </button>
+              </div>
+            </div>
+            <div className="relative h-96 lg:h-[32rem]">
+              <HeroIllustration />
+            </div>
+          </div>
+        </main>
 
-                {/* Enhanced Hero Section */}
-                <main className="container mx-auto px-6 py-20 md:py-32 max-w-7xl">
-                    <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-12">
-                        <div className="text-center lg:text-left">
-                            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500/20 to-purple-500/20 px-4 py-2 rounded-full border border-teal-400/30 mb-6">
-                                <Zap className="w-4 h-4 text-teal-400" />
-                                <span className="text-sm font-semibold text-teal-300">AI-Powered Legal Analysis</span>
-                            </div>
-                            
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
-                                Turn Complex Contracts into
-                                <br />
-                                <span className="bg-gradient-to-r from-teal-400 to-purple-400 text-transparent bg-clip-text">
-                                    Simple Clarity.
-                                </span>
-                            </h1>
-                            
-                            <p className="text-lg text-purple-200/80 max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-                                LawLytics is your AI-powered legal co-pilot, designed to decode jargon, highlight critical risks, 
-                                and generate interactive case timelines from any legal document.
-                            </p>
-                            
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-                                <button className="bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:text-white font-bold text-lg px-8 py-4 rounded-full hover:from-teal-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-teal-500/30 flex items-center justify-center gap-2">
-                                    <FileText className="w-5 h-5" />
-                                    Analyze a Document
-                                </button>
-                                <button className="border-2 border-white/20 text-white font-semibold text-lg px-8 py-4 rounded-full hover:border-teal-400/50 hover:bg-white/5 transition-all duration-300 flex items-center justify-center gap-2">
-                                    <Play className="w-5 h-5" />
-                                    Watch Demo
-                                </button>
-                            </div>
-                            
-                            {/* Trust indicators */}
-                            <div className="flex items-center justify-center lg:justify-start gap-6 text-sm text-purple-200/60">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span>100% Secure</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span>GDPR Compliant</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span>Free Trial</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="relative h-96 lg:h-[32rem]">
-                            <HeroIllustration />
-                        </div>
-                    </div>
-                </main>
-
-                {/* Stats Section */}
-                <section className="py-16 border-y border-white/10 bg-white/5">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                            <StatsCounter end={10000} label="Documents Analyzed" icon={FileText} />
-                            <StatsCounter end={5000} label="Happy Users" icon={Users} />
-                            <StatsCounter end={95} label="Accuracy Rate" icon={Award} />
-                            <StatsCounter end={24} label="Hour Support" icon={Clock} />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Enhanced Features Section */}
-                <section id="features" className="py-24">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="text-center mb-16 max-w-3xl mx-auto">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                                A Complete Legal Intelligence Toolkit
-                            </h2>
-                            <p className="text-purple-200/80 text-lg leading-relaxed">
-                                From critical risk assessment to chronological case summaries, gain a complete understanding of your legal documents.
-                            </p>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-screen-xl mx-auto">
-                            <EnhancedFeatureCard 
-                                icon={<Upload className="w-8 h-8 text-teal-400" />} 
-                                title="Instant Upload & Scan" 
-                                delay={0}
-                            >
-                                Securely upload any PDF, image, or text file. Our AI gets to work in seconds, analyzing every clause and condition.
-                            </EnhancedFeatureCard>
-                            
-                            <EnhancedFeatureCard 
-                                icon={<Shield className="w-8 h-8 text-red-400" />} 
-                                title="Visual Risk Mapping" 
-                                delay={1}
-                            >
-                                Instantly see risky clauses highlighted in red. No more surprises hiding in the fine print—everything is crystal clear.
-                            </EnhancedFeatureCard>
-                            
-                            <EnhancedFeatureCard 
-                                icon={<Calendar className="w-8 h-8 text-amber-400" />} 
-                                title="AI Timeline Generation" 
-                                delay={2}
-                            >
-                                Automatically extract key events to generate an interactive, visual timeline of your case with animated storytelling.
-                            </EnhancedFeatureCard>
-                            
-                            <EnhancedFeatureCard 
-                                icon={<MessageSquare className="w-8 h-8 text-purple-400" />} 
-                                title="Conversational Q&A" 
-                                delay={3}
-                            >
-                                Ask "what if" questions and get simple answers in plain English, like having a lawyer on call 24/7.
-                            </EnhancedFeatureCard>
-                        </div>
-                    </div>
-                </section>
-                
-                {/* How It Works Section */}
-                <section id="how-it-works" className="py-24 bg-white/5">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                                How It Works
-                            </h2>
-                            <p className="text-purple-200/80 text-lg max-w-2xl mx-auto">
-                                Get from confusion to clarity in three simple steps
-                            </p>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                            <div className="text-center group relative">
-                                <div className="bg-gradient-to-br from-teal-500/20 to-purple-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                                    <span className="text-3xl font-bold text-teal-300">1</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">Upload Your Document</h3>
-                                <p className="text-purple-200/80">Simply drag and drop or browse to upload any legal document in seconds.</p>
-                                
-                                {/* Connecting arrow */}
-                                <div className="hidden md:block absolute top-10 -right-4 w-8 h-8">
-                                    <ChevronRight className="w-8 h-8 text-purple-400/50" />
-                                </div>
-                            </div>
-                            
-                            <div className="text-center group relative">
-                                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                                    <span className="text-3xl font-bold text-purple-300">2</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">Choose Analysis Type</h3>
-                                <p className="text-purple-200/80">Select between detailed Risk Analysis or interactive Case Timeline generation.</p>
-                                
-                                {/* Connecting arrow */}
-                                <div className="hidden md:block absolute top-10 -right-4 w-8 h-8">
-                                    <ChevronRight className="w-8 h-8 text-purple-400/50" />
-                                </div>
-                            </div>
-                            
-                            <div className="text-center group">
-                                <div className="bg-gradient-to-br from-pink-500/20 to-teal-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                                    <span className="text-3xl font-bold text-pink-300">3</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">Get Instant Insights</h3>
-                                <p className="text-purple-200/80">Receive clear summaries, risk reports, or visual timelines with actionable recommendations.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Testimonials Section */}
-                <section id="testimonials" className="py-24">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                                Trusted by Legal Professionals
-                            </h2>
-                            <p className="text-purple-200/80 text-lg max-w-2xl mx-auto">
-                                See what our users are saying about their experience with LawLytics
-                            </p>
-                        </div>
-                        
-                        <div className="max-w-4xl mx-auto">
-                            <div className="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-center">
-                                <div className="flex justify-center mb-4">
-                                    {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                                    ))}
-                                </div>
-                                <blockquote className="text-xl text-white mb-6 italic">
-                                    "{testimonials[currentTestimonial].text}"
-                                </blockquote>
-                                <div>
-                                    <div className="font-semibold text-white">{testimonials[currentTestimonial].author}</div>
-                                    <div className="text-purple-200/80">{testimonials[currentTestimonial].role}</div>
-                                </div>
-                            </div>
-                            
-                            {/* Testimonial dots */}
-                            <div className="flex justify-center mt-8 gap-2">
-                                {testimonials.map((_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentTestimonial(index)}
-                                        className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                                            index === currentTestimonial ? 'bg-teal-400' : 'bg-white/30'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Enhanced CTA Section */}
-                <section className="py-24 bg-gradient-to-r from-teal-500/10 to-purple-500/10">
-                    <div className="container mx-auto px-6 text-center max-w-4xl">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                            Ready to Decode Your Next Contract?
-                        </h2>
-                        <p className="text-purple-200/80 text-lg mb-10 max-w-2xl mx-auto">
-                            Join thousands of professionals who trust LawLytics to make sense of complex legal documents.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button className="bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:text-white font-bold text-xl px-12 py-5 rounded-full transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-teal-500/30 inline-flex items-center justify-center gap-3">
-                                <FileText className="w-6 h-6" />
-                                Start Analyzing Now - Free
-                            </button>
-                            <button className="border-2 border-white/20 text-white font-semibold text-xl px-12 py-5 rounded-full hover:border-teal-400/50 hover:bg-white/5 transition-all duration-300 inline-flex items-center justify-center gap-3">
-                                <Download className="w-6 h-6" />
-                                Download Brochure
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Enhanced Footer */}
-                <footer className="bg-black/20 text-purple-200/70 py-12 border-t border-white/10">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="grid md:grid-cols-4 gap-8 mb-8">
-                            <div>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="text-lg font-semibold text-white">LawLytics</span>
-                                </div>
-                                <p className="text-sm">Empowering clarity in a complex legal world through AI-powered analysis.</p>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-white mb-4">Product</h4>
-                                <ul className="space-y-2 text-sm">
-                                    <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-white mb-4">Company</h4>
-                                <ul className="space-y-2 text-sm">
-                                    <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-white mb-4">Support</h4>
-                                <ul className="space-y-2 text-sm">
-                                    <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                                    <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="text-center pt-8 border-t border-white/10">
-                            <p className="text-sm">&copy; 2025 LawLytics. All Rights Reserved. Empowering Clarity in a Complex World.</p>
-                        </div>
-                    </div>
-                </footer>
+        {/* Features Section */}
+        <section id="features" className="py-24 bg-white/5">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="text-center mb-16 max-w-3xl mx-auto">
+              <h3 className="text-4xl md:text-5xl font-bold mb-6">
+                Understand, Don't Just Read
+              </h3>
+              <p className="text-purple-200/80 text-lg leading-relaxed">
+                Our core features are designed to empower you with clarity and confidence when facing any legal document.
+              </p>
             </div>
             
-            <style jsx>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-20px) rotate(5deg); }
-                }
-                
-                @keyframes spin-slow {
-                    from { transform: translate(-50%, -50%) rotate(0deg); }
-                    to { transform: translate(-50%, -50%) rotate(360deg); }
-                }
-                
-                .animate-float {
-                    animation: float 6s ease-in-out infinite;
-                }
-                
-                .animate-spin-slow {
-                    animation: spin-slow 20s linear infinite;
-                }
-            `}</style>
-        </div>
-    );
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <EnhancedFeatureCard 
+                illustration={<UploadIllustration />}
+                icon={<UploadIcon />} 
+                title="Instant Upload & Scan"
+              >
+                Securely upload any PDF, image, or text file. Our AI gets to work in seconds, analyzing every clause and condition.
+              </EnhancedFeatureCard>
+              <EnhancedFeatureCard 
+                illustration={<RiskMapIllustration />}
+                icon={<MapIcon />} 
+                title="Visual Risk Mapping"
+              >
+                Instantly see risky clauses highlighted in red. No more surprises hiding in the fine print—everything is crystal clear.
+              </EnhancedFeatureCard>
+              <EnhancedFeatureCard 
+                illustration={<ChatIllustration />}
+                icon={<ChatIcon />} 
+                title="Conversational Q&A"
+              >
+                Ask "what if" questions and get simple answers in plain English, like having a lawyer on call 24/7.
+              </EnhancedFeatureCard>
+            </div>
+          </div>
+        </section>
+        
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-24">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="text-center mb-16">
+              <h3 className="text-4xl md:text-5xl font-bold mb-6">
+                How It Works
+              </h3>
+              <p className="text-purple-200/80 text-lg max-w-2xl mx-auto">
+                Get from confusion to clarity in three simple steps
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="text-center group">
+                <div className="bg-gradient-to-br from-teal-500/20 to-purple-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-3xl font-bold text-teal-300">1</span>
+                </div>
+                <h4 className="text-xl font-bold text-white mb-3">Upload Your Document</h4>
+                <p className="text-purple-200/80">Simply drag and drop or browse to upload any legal document</p>
+              </div>
+              <div className="text-center group">
+                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-3xl font-bold text-purple-300">2</span>
+                </div>
+                <h4 className="text-xl font-bold text-white mb-3">AI Analysis</h4>
+                <p className="text-purple-200/80">Our AI scans and analyzes every clause, identifying risks and opportunities</p>
+              </div>
+              <div className="text-center group">
+                <div className="bg-gradient-to-br from-pink-500/20 to-teal-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-3xl font-bold text-pink-300">3</span>
+                </div>
+                <h4 className="text-xl font-bold text-white mb-3">Get Instant Insights</h4>
+                <p className="text-purple-200/80">Receive a clear summary with actionable recommendations and Q&A</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24">
+          <div className="container mx-auto px-6 text-center max-w-4xl">
+            <h3 className="text-4xl md:text-5xl font-bold mb-6">
+              Ready to Decode Your Next Contract?
+            </h3>
+            <p className="text-purple-200/80 text-lg mb-10 max-w-2xl mx-auto">
+              Join thousands of professionals who trust LawLytics to make sense of complex legal documents.
+            </p>
+            <Link 
+              to="/dashboard" 
+              className="bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:text-white font-bold text-xl px-12 py-5 rounded-full transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-teal-500/30 inline-block no-underline"
+            >
+              Start Analyzing Now - Free
+            </Link>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-black/20 text-purple-200/70 text-center py-8 border-t border-white/10">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <svg className="w-6 h-6 text-teal-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5z"/>
+              </svg>
+              <span className="text-lg font-semibold text-white">LawLytics</span>
+            </div>
+            <p className="text-sm">&copy; 2025 LawLytics. All Rights Reserved. Empowering Clarity in a Complex World.</p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
 }
