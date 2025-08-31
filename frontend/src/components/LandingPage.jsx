@@ -40,8 +40,6 @@ const HeroIllustration = () => (
         </div>
     </div>
 );
-
-// Feature illustration components
 const UploadIllustration = () => (
     <div className="w-32 h-32 mx-auto mb-6 relative">
         <div className="w-full h-full bg-gradient-to-br from-teal-400/20 to-purple-400/20 rounded-3xl border-2 border-dashed border-teal-400/40 flex items-center justify-center">
@@ -84,6 +82,21 @@ const EnhancedFeatureCard = ({ illustration, icon, title, children }) => (
 );
 
 export default function LandingPage() {
+  const isUserLoggedIn = () => {
+    // Replace this with your actual authentication check
+    // For example: return localStorage.getItem('token') || sessionStorage.getItem('user') || authContext.isAuthenticated
+    return localStorage.getItem('authToken') !== null;
+  };
+
+  const handleAnalyzeDocument = () => {
+    if (isUserLoggedIn()) {
+      // Navigate to dashboard if logged in
+      window.location.href = '/dashboard';
+    } else {
+      // Navigate to login page if not logged in
+      window.location.href = '/login';
+    }
+  };
   return (
     <div className="bg-[#0D0B1A] text-white min-h-screen font-sans overflow-x-hidden">
       {/* Background Effects */}
@@ -108,12 +121,12 @@ export default function LandingPage() {
                 LawLytics is your AI-powered legal co-pilot, designed to decode legal jargon, highlight critical risks, and provide instant, understandable answers about any document.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link 
-                  to="/dashboard" 
+                <button 
+                  onClick={handleAnalyzeDocument}
                   className="bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:text-white font-bold text-lg px-8 py-4 rounded-full hover:from-teal-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-teal-500/30 no-underline inline-block text-center"
                 >
                   Analyze a Document
-                </Link>
+                </button>
 
                 <button className="border-2 border-white/20 text-white font-semibold text-lg px-8 py-4 rounded-full hover:border-teal-400/50 hover:bg-white/5 transition-all duration-300">
                   Watch Demo
@@ -138,7 +151,7 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
               <EnhancedFeatureCard 
                 illustration={<UploadIllustration />}
                 icon={<UploadIcon />} 
@@ -159,6 +172,13 @@ export default function LandingPage() {
                 title="Conversational Q&A"
               >
                 Ask "what if" questions and get simple answers in plain English, like having a lawyer on call 24/7.
+              </EnhancedFeatureCard>
+              <EnhancedFeatureCard 
+                illustration={<TimelineIllustration />}
+                icon={<TimelineIcon />} 
+                title="Timeline Generation"
+              >
+                Automatically extract and visualize key dates, deadlines, and events from your documents into an interactive timeline.
               </EnhancedFeatureCard>
             </div>
           </div>
@@ -189,7 +209,7 @@ export default function LandingPage() {
                   <span className="text-3xl font-bold text-purple-300">2</span>
                 </div>
                 <h4 className="text-xl font-bold text-white mb-3">AI Analysis</h4>
-                <p className="text-purple-200/80">Our AI scans and analyzes every clause, identifying risks and opportunities</p>
+                <p className="text-purple-200/80">Our AI scans and analyzes every clause, identifies risks and opportunities, and generates an interactive timeline of key events and deadlines</p>
               </div>
               <div className="text-center group">
                 <div className="bg-gradient-to-br from-pink-500/20 to-teal-500/20 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
