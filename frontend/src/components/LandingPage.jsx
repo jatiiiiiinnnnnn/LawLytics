@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Icon Components
 const UploadIcon = () => (
@@ -82,21 +83,18 @@ const EnhancedFeatureCard = ({ illustration, icon, title, children }) => (
 );
 
 export default function LandingPage() {
-  const isUserLoggedIn = () => {
-    // Replace this with your actual authentication check
-    // For example: return localStorage.getItem('token') || sessionStorage.getItem('user') || authContext.isAuthenticated
-    return localStorage.getItem('authToken') !== null;
-  };
+  const { currentUser } = useAuth(); // Get user state from AuthContext
+    const navigate = useNavigate(); // Get navigate function from React Router
 
-  const handleAnalyzeDocument = () => {
-    if (isUserLoggedIn()) {
-      // Navigate to dashboard if logged in
-      window.location.href = '/dashboard';
-    } else {
-      // Navigate to login page if not logged in
-      window.location.href = '/login';
-    }
-  };
+    const handleAnalyzeDocument = () => {
+        if (currentUser) {
+            // If user is logged in, navigate to the dashboard
+            navigate('/dashboard');
+        } else {
+            // If user is not logged in, navigate to the authentication page
+            navigate('/auth'); // Assuming your login page is at '/auth'
+        }
+    };
   return (
     <div className="bg-[#0D0B1A] text-white min-h-screen font-sans overflow-x-hidden">
       {/* Background Effects */}
