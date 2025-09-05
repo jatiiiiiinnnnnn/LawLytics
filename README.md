@@ -1,4 +1,4 @@
-# ⚖️✨ LexiLens
+# ⚖️✨ LawLytics
 
 **From legalese to plain speak, instantly.**
 
