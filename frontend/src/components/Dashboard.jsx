@@ -16,9 +16,9 @@ const DocumentCard = ({ doc }) => {
     };
 
     return (
-        <Link to={linkPath} className="block bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group">
+        <Link to={linkPath} className="block bg-[#1a2c32]/80 backdrop-blur-sm p-6 rounded-xl border border-[#2a4a53] hover:border-[#c5a35a] hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex justify-between items-start">
-                <h3 className="font-bold text-lg text-white group-hover:text-blue-400 pr-4 line-clamp-1">{doc.fileName}</h3>
+                <h3 className="font-bold text-lg text-white group-hover:text-[#c5a35a] pr-4 line-clamp-1">{doc.fileName}</h3>
                 {doc.analysisType === 'timeline' ? (
                     <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-purple-300 bg-purple-950/50 px-2 py-1 rounded-md">
                         <Calendar className="w-3 h-3" /> Timeline
@@ -30,8 +30,8 @@ const DocumentCard = ({ doc }) => {
                     </div>
                 )}
             </div>
-            <p className="text-slate-400 text-sm mt-2 line-clamp-2 h-10">{doc.summary}</p>
-            <p className="text-slate-500 text-xs mt-4">
+            <p className="text-gray-400 text-sm mt-2 line-clamp-2 h-10">{doc.summary}</p>
+            <p className="text-gray-500 text-xs mt-4">
                 {formatDate(doc.createdAt)}
             </p>
         </Link>
@@ -115,49 +115,79 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-8">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white p-8 relative">
+            {/* Background Effects */}
+            <div className="fixed top-0 left-0 w-96 h-96 bg-[#c5a35a]/5 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+            <div className="fixed bottom-0 right-0 w-96 h-96 bg-[#c5a35a]/5 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+            
+            <div className="max-w-6xl mx-auto relative z-10">
                 <header className="mb-12">
                     <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-                    <p className="text-slate-400 mt-2">Upload a new document or review your past analyses.</p>
+                    <p className="text-gray-400 mt-2">Upload a new document or review your past analyses.</p>
                 </header>
 
-                <section className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 mb-12">
+                <section className="bg-[#1a2c32]/50 backdrop-blur-md p-8 rounded-2xl border border-[#2a4a53] mb-12">
                     <div className="flex flex-col md:flex-row items-center gap-6">
-                        <label htmlFor="file-upload" className="w-full md:w-1/3 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/50 transition-colors">
-                            <UploadCloud className="w-10 h-10 text-slate-500 mb-2" />
-                            <span className="font-semibold text-slate-300">{file ? "File Selected" : "Choose a file"}</span>
-                            <span className="text-xs text-slate-400 mt-1 truncate w-full text-center px-2">{file ? file.name : "PDF or TXT"}</span>
+                        <label htmlFor="file-upload" className="w-full md:w-1/3 flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#2a4a53] rounded-lg cursor-pointer hover:bg-[#223a42]/50 hover:border-[#c5a35a]/50 transition-all duration-300">
+                            <UploadCloud className="w-10 h-10 text-gray-400 mb-2" />
+                            <span className="font-semibold text-gray-300">{file ? "File Selected" : "Choose a file"}</span>
+                            <span className="text-xs text-gray-400 mt-1 truncate w-full text-center px-2">{file ? file.name : "PDF or TXT"}</span>
                             <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.txt" />
                         </label>
                         
                         <div className="w-full md:w-2/3">
-                            <h2 className="text-xl font-bold mb-4">Choose an Action</h2>
-                            <p className="text-slate-400 text-sm mb-4">Once you've selected a file, choose whether to perform a risk analysis or generate a case timeline.</p>
+                            <h2 className="text-xl font-bold mb-4 text-white">Choose an Action</h2>
+                            <p className="text-gray-400 text-sm mb-4">Once you've selected a file, choose whether to perform a risk analysis or generate a case timeline.</p>
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <button onClick={() => handleUpload('risk')} disabled={!file || isLoading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <button 
+                                    onClick={() => handleUpload('risk')} 
+                                    disabled={!file || isLoading} 
+                                    className="flex-1 bg-[#c5a35a] hover:bg-[#b5944a] text-[#0d1a1e] font-semibold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-[#2a4a53] disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-[#c5a35a]/20 transform hover:scale-[1.02] active:scale-[0.98]"
+                                >
                                     {isLoading && analysisType === 'risk' ? 'Analyzing...' : <><BarChart3 className="w-5 h-5" /> Analyze Risks</>}
                                 </button>
-                                <button onClick={() => handleUpload('timeline')} disabled={!file || isLoading} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <button 
+                                    onClick={() => handleUpload('timeline')} 
+                                    disabled={!file || isLoading} 
+                                    className="flex-1 bg-[#c5a35a] hover:bg-[#b5944a] text-[#0d1a1e] font-semibold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-[#2a4a53] disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-[#c5a35a]/20 transform hover:scale-[1.02] active:scale-[0.98]"
+                                >
                                     {isLoading && analysisType === 'timeline' ? 'Generating...' : <><Calendar className="w-5 h-5" /> Generate Timeline</>}
                                 </button>
                             </div>
-                            {errorMessage && <p className="text-red-400 text-sm mt-4">{errorMessage}</p>}
+                            {errorMessage && (
+                                <div className="bg-red-500/10 border border-red-400/20 text-red-300 p-3 rounded-lg text-sm mt-4 backdrop-blur-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                                        <span>{errorMessage}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <h2 className="text-2xl font-bold mb-6">Document History</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-white">Document History</h2>
                     {isLoadingDocs ? (
-                        <p>Loading documents...</p>
+                        <div className="text-center py-8">
+                            <div className="inline-flex items-center gap-3 text-gray-400">
+                                <div className="w-5 h-5 border-2 border-gray-400/30 border-t-[#c5a35a] rounded-full animate-spin"></div>
+                                <span>Loading documents...</span>
+                            </div>
+                        </div>
                     ) : documents.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {documents.map(doc => <DocumentCard key={doc.id} doc={doc} />)}
                         </div>
                     ) : (
-                        <div className="text-center py-16 bg-slate-800/50 rounded-2xl border border-slate-700">
-                            <p className="text-slate-400">You haven't analyzed any documents yet.</p>
+                        <div className="text-center py-16 bg-[#1a2c32]/50 backdrop-blur-md rounded-2xl border border-[#2a4a53]">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 bg-[#2a4a53] rounded-full flex items-center justify-center">
+                                    <FileText className="w-8 h-8 text-gray-400" />
+                                </div>
+                                <p className="text-gray-400">You haven't analyzed any documents yet.</p>
+                                <p className="text-gray-500 text-sm">Upload your first document to get started with AI-powered legal analysis.</p>
+                            </div>
                         </div>
                     )}
                 </section>

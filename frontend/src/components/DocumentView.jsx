@@ -31,14 +31,15 @@ import {
     Lightbulb,
     BarChart3,
     PieChart,
-    Zap
+    Zap,
+    Calendar,
+    Users
 } from 'lucide-react';
 
-
 const StatCard = ({ label, value, color, icon: IconComponent, isDark, trend }) => (
-    <div className={`${isDark ? 'bg-gray-800/90 border-gray-700/50 hover:bg-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:bg-gray-50'} border backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group`}>
+    <div className={`${isDark ? 'bg-[#1a2c32] border-[#2a4a53] hover:bg-[#223a42]' : 'bg-white border-gray-200 hover:bg-gray-50'} border backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group`}>
         <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 rounded-xl ${color.replace('text-', 'bg-').replace('-500', isDark ? '-900/50' : '-100')} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+            <div className={`w-12 h-12 rounded-xl ${color.replace('text-', 'bg-').replace('-500', isDark ? '-900/30' : '-100')} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                 <IconComponent className={`w-6 h-6 ${color}`} />
             </div>
             {trend && (
@@ -94,7 +95,7 @@ const CaseTimeline = ({ events, isDark }) => {
     if (!events || events.length === 0) {
         return (
             <div className="text-center py-16">
-                <div className={`w-20 h-20 ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                <div className={`w-20 h-20 ${isDark ? 'bg-[#223a42]' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6`}>
                     <Calendar className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
                 <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>No Timeline Available</h3>
@@ -108,14 +109,17 @@ const CaseTimeline = ({ events, isDark }) => {
             <div className="relative">
                 {events.map((event, index) => (
                     <div key={index} className={`relative ${index !== events.length - 1 ? 'pb-10' : ''}`}>
-                        {index !== events.length - 1 && <div className={`absolute top-5 left-[11px] w-0.5 h-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}></div>}
-                        <div className="absolute w-6 h-6 bg-blue-500/20 rounded-full mt-2 -left-[1px] border-4 border-blue-500/20 flex items-center justify-center">
-                            <div className={`w-3 h-3 bg-blue-500 rounded-full`}></div>
+                        {index !== events.length - 1 && <div className={`absolute top-5 left-[11px] w-0.5 h-full ${isDark ? 'bg-[#223a42]' : 'bg-gray-200'}`}></div>}
+                        <div className="absolute w-6 h-6 bg-[#c5a35a] rounded-full mt-2 -left-[1px] border-4 border-[#c5a35a]/20 flex items-center justify-center">
+                            <div className={`w-3 h-3 bg-[#c5a35a] rounded-full`}></div>
                         </div>
                         <div className="ml-10">
                             <div className="flex items-center gap-4 mb-2">
-                                <time className={`text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{event.date}</time>
-                                <span className={`text-xs ${isDark ? 'bg-gray-700' : 'bg-gray-100'} ${isDark ? 'text-gray-300' : 'text-gray-700'} px-2.5 py-1 rounded-md flex items-center gap-1.5`}><Users className="w-3 h-3"/>{event.parties}</span>
+                                <time className={`text-sm font-semibold ${isDark ? 'text-[#c5a35a]' : 'text-[#c5a35a]'}`}>{event.date}</time>
+                                <span className={`text-xs ${isDark ? 'bg-[#223a42]' : 'bg-gray-100'} ${isDark ? 'text-gray-300' : 'text-gray-700'} px-2.5 py-1 rounded-md flex items-center gap-1.5`}>
+                                    <Users className="w-3 h-3"/>
+                                    {event.parties}
+                                </span>
                             </div>
                             <p className={`${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{event.event}</p>
                         </div>
@@ -125,20 +129,18 @@ const CaseTimeline = ({ events, isDark }) => {
         </div>
     );
 };
-// --- Main Component ---
 
 export default function DocumentView() {
     const location = useLocation();
     const { id: documentId } = useParams();
     
-    // FIX 1: Correct state management
     const [analysis, setAnalysis] = useState(location.state?.analysis || null);
-    const [isLoadingData, setIsLoadingData] = useState(!analysis); // Renamed for clarity
+    const [isLoadingData, setIsLoadingData] = useState(!analysis);
     const [error, setError] = useState('');
 
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // For chat loading
+    const [isLoading, setIsLoading] = useState(false);
     const [selectedRiskFilter, setSelectedRiskFilter] = useState('all');
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(true);
@@ -150,13 +152,11 @@ export default function DocumentView() {
 
     const chatEndRef = useRef(null);
 
-   useEffect(() => {
+    useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Fixed useEffect to prevent infinite loops
     useEffect(() => {
-        // If analysis data was passed from the dashboard, don't fetch again
         if (analysis) {
             console.log("Analysis data already present:", analysis);
             setIsLoadingData(false);
@@ -173,7 +173,6 @@ export default function DocumentView() {
                 const response = await axios.get(`/api/document/${documentId}`);
                 console.log("API Response:", response.data);
                 
-                // Handle different response structures from your backend
                 if (response.data.fullAnalysis) {
                     setAnalysis(response.data.fullAnalysis);
                 } else if (response.data.analysis) {
@@ -200,7 +199,6 @@ export default function DocumentView() {
         fetchDocumentDetails();
     }, [documentId]);
 
-    // FIX 4: Add debugging for analysis data
     useEffect(() => {
         console.log("Current analysis state:", analysis);
         console.log("Is loading data:", isLoadingData);
@@ -222,8 +220,8 @@ export default function DocumentView() {
 
         try {
             const response = await axios.post('/api/chat', { 
-            document_id: documentId, 
-            question: userInput 
+                document_id: documentId, 
+                question: userInput 
             });
             setMessages([...newMessages, { sender: 'ai', text: response.data.answer }]);
         } catch (error) {
@@ -234,12 +232,11 @@ export default function DocumentView() {
         }
     };
 
-    // FIX 5: Better loading and error states
     if (isLoadingData) {
         return (
-            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c5a35a] mx-auto mb-4"></div>
                     <p className="text-lg">Loading document analysis...</p>
                     <p className="text-sm text-gray-400 mt-2">Document ID: {documentId}</p>
                 </div>
@@ -249,14 +246,14 @@ export default function DocumentView() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <div className="text-red-500 text-6xl mb-4">⚠️</div>
                     <h2 className="text-2xl font-bold mb-4">Error Loading Document</h2>
                     <p className="text-gray-300 mb-6">{error}</p>
                     <button 
                         onClick={() => window.history.back()} 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                        className="bg-[#c5a35a] hover:bg-[#b5944a] text-white px-6 py-3 rounded-lg transition-colors"
                     >
                         Go Back
                     </button>
@@ -265,10 +262,9 @@ export default function DocumentView() {
         );
     }
 
-    // FIX 6: Better check for analysis data
     if (!analysis || !Array.isArray(analysis) || analysis.length === 0) {
         return (
-            <div className="min-h-screen bg-[#0D0B1A] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <div className="text-yellow-500 text-6xl mb-4">📄</div>
                     <h2 className="text-2xl font-bold mb-4">No Analysis Data</h2>
@@ -282,7 +278,7 @@ export default function DocumentView() {
                     </ul>
                     <button 
                         onClick={() => window.history.back()} 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                        className="bg-[#c5a35a] hover:bg-[#b5944a] text-white px-6 py-3 rounded-lg transition-colors"
                     >
                         Back to Dashboard
                     </button>
@@ -341,9 +337,9 @@ export default function DocumentView() {
             },
             Gray: { 
                 text: 'Review', 
-                bg: isDark ? 'bg-gray-700/30' : 'bg-gray-50', 
+                bg: isDark ? 'bg-[#223a42]' : 'bg-gray-50', 
                 color: isDark ? 'text-gray-400' : 'text-gray-700', 
-                border: isDark ? 'border-gray-600/50' : 'border-gray-200', 
+                border: isDark ? 'border-[#2a4a53]' : 'border-gray-200', 
                 icon: Eye 
             }
         };
@@ -358,14 +354,12 @@ export default function DocumentView() {
         );
     };
 
-    // Enhanced report generation with comprehensive contract analysis (UNCHANGED)
     const generateComprehensiveReport = () => {
         const highRiskClauses = analysis.filter(c => c.risk_level === 'Red');
         const moderateRiskClauses = analysis.filter(c => c.risk_level === 'Orange');
         const lowRiskClauses = analysis.filter(c => c.risk_level === 'Green');
         const reviewClauses = analysis.filter(c => c.risk_level === 'Gray');
 
-        // Analyze contract patterns and themes
         const contractAnalysis = {
             riskDistribution: {
                 critical: Math.round((highRiskClauses.length / riskStats.total) * 100),
@@ -399,7 +393,6 @@ export default function DocumentView() {
             }
         };
 
-        // Generate detailed recommendations
         const detailedRecommendations = [];
         
         if (highRiskClauses.length > 0) {
@@ -526,7 +519,6 @@ export default function DocumentView() {
 
             const htmlContent = `
                 <div style="padding: 30px;">
-                    <!-- Professional Header -->
                     <div style="text-align: center; margin-bottom: 40px; padding: 25px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px;">
                         <h1 style="color: #1e293b; font-size: 32px; margin: 0; font-weight: bold; letter-spacing: -0.5px;">LawLytics Contract Analysis Report</h1>
                         <p style="color: #475569; font-size: 18px; margin: 8px 0 16px 0;">Professional Legal Document Intelligence & Risk Assessment</p>
@@ -536,11 +528,10 @@ export default function DocumentView() {
                             <span><strong>Risk Level:</strong> <span style="color: ${report.contractOverview.riskScore >= 70 ? '#dc2626' : report.contractOverview.riskScore >= 40 ? '#d97706' : '#059669'}; font-weight: bold;">${report.contractOverview.riskLevel}</span></span>
                         </div>
                     </div>
-
-                    <!-- Executive Summary -->
+                    
                     <div style="margin-bottom: 35px; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                         <div style="background: #1e293b; color: white; padding: 20px;">
-                            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">📋 Executive Summary</h2>
+                            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">Executive Summary</h2>
                         </div>
                         <div style="padding: 25px;">
                             <div style="background: ${report.contractOverview.riskScore >= 70 ? '#fef2f2' : report.contractOverview.riskScore >= 40 ? '#fffbeb' : '#f0fdf4'}; border-left: 4px solid ${report.contractOverview.riskScore >= 70 ? '#dc2626' : report.contractOverview.riskScore >= 40 ? '#d97706' : '#059669'}; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
@@ -564,10 +555,9 @@ export default function DocumentView() {
                             </div>
                         </div>
                     </div>
-
-                    <!-- Contract Overview & Metrics -->
+                    
                     <div style="margin-bottom: 35px;">
-                        <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 20px; font-weight: bold;">📊 Contract Analysis Overview</h2>
+                        <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 20px; font-weight: bold;">Contract Analysis Overview</h2>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; text-align: center;">
                                 <h4 style="margin: 0 0 5px 0; color: #dc2626; font-size: 24px; font-weight: bold;">${report.contractOverview.riskDistribution.critical}%</h4>
@@ -595,55 +585,13 @@ export default function DocumentView() {
                         </div>
                     </div>
 
-                    <!-- Detailed Recommendations -->
-                    <div style="margin-bottom: 35px;">
-                        <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 20px; font-weight: bold;">💡 Strategic Recommendations</h2>
-                        ${report.detailedRecommendations.map(rec => `
-                            <div style="margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                                <div style="background: ${rec.priority === 'CRITICAL' ? '#fef2f2' : rec.priority === 'HIGH' ? '#fffbeb' : '#eff6ff'}; padding: 15px; border-bottom: 1px solid #e2e8f0;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                        <h3 style="margin: 0; color: #1e293b; font-size: 18px;">${rec.title}</h3>
-                                        <div style="display: flex; gap: 10px;">
-                                            <span style="background: ${rec.priority === 'CRITICAL' ? '#dc2626' : rec.priority === 'HIGH' ? '#d97706' : '#2563eb'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;">${rec.priority}</span>
-                                            <span style="background: #64748b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${rec.category}</span>
-                                        </div>
-                                    </div>
-                                    <p style="margin: 0; color: #475569; font-size: 15px;">${rec.description}</p>
-                                </div>
-                                <div style="padding: 20px;">
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                                        <div>
-                                            <p style="margin: 0 0 5px 0; color: #1e293b; font-weight: bold; font-size: 14px;">Business Impact:</p>
-                                            <p style="margin: 0; color: #475569; font-size: 14px;">${rec.businessImpact}</p>
-                                        </div>
-                                        <div>
-                                            <p style="margin: 0 0 5px 0; color: #1e293b; font-weight: bold; font-size: 14px;">Timeframe:</p>
-                                            <p style="margin: 0; color: #475569; font-size: 14px;">${rec.timeframe}</p>
-                                        </div>
-                                    </div>
-                                    <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 16px;">Action Items:</h4>
-                                    <ul style="margin: 0 0 15px 0; padding-left: 20px; color: #475569;">
-                                        ${rec.actions.map(action => `<li style="margin: 5px 0;">${action}</li>`).join('')}
-                                    </ul>
-                                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid #64748b;">
-                                        <div style="display: flex; justify-content: space-between;">
-                                            <span style="color: #1e293b; font-weight: bold; font-size: 14px;">Estimated Cost: ${rec.estimatedCost}</span>
-                                            <span style="color: #dc2626; font-weight: bold; font-size: 14px;">Risk if Ignored: ${rec.riskIfIgnored}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <!-- Critical Risk Clauses -->
                     ${report.riskAnalysis.highRisk.length > 0 ? `
                         <div style="margin-bottom: 35px;">
-                            <h2 style="color: #dc2626; font-size: 24px; margin-bottom: 20px; font-weight: bold;">🚨 Critical Risk Clauses (${report.riskAnalysis.highRisk.length})</h2>
+                            <h2 style="color: #dc2626; font-size: 24px; margin-bottom: 20px; font-weight: bold;">Critical Risk Clauses (${report.riskAnalysis.highRisk.length})</h2>
                             <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                                 <p style="margin: 0; color: #7f1d1d; font-weight: bold; font-size: 16px;">⚠️ WARNING: These clauses pose significant legal and financial risks. Immediate legal review is required before contract execution.</p>
                             </div>
-                            ${report.riskAnalysis.highRisk.map((clause, index) => `
+                            ${report.riskAnalysis.highRisk.slice(0, 5).map((clause, index) => `
                                 <div style="margin-bottom: 20px; border: 2px solid #dc2626; border-radius: 8px; overflow: hidden;">
                                     <div style="background: #fee2e2; padding: 15px; border-bottom: 1px solid #fecaca;">
                                         <h4 style="margin: 0; color: #7f1d1d; font-size: 16px;">Critical Risk Clause #${index + 1}</h4>
@@ -658,40 +606,16 @@ export default function DocumentView() {
                                     </div>
                                 </div>
                             `).join('')}
-                        </div>
-                    ` : ''}
-
-                    <!-- Moderate Risk Clauses -->
-                    ${report.riskAnalysis.moderateRisk.length > 0 ? `
-                        <div style="margin-bottom: 35px;">
-                            <h2 style="color: #d97706; font-size: 24px; margin-bottom: 20px; font-weight: bold;">⚠️ Moderate Risk Clauses (${report.riskAnalysis.moderateRisk.length})</h2>
-                            <div style="background: #fffbeb; border: 1px solid #fed7aa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                                <p style="margin: 0; color: #92400e; font-weight: bold;">These clauses present manageable risks that should be addressed through negotiation or clarification.</p>
-                            </div>
-                            ${report.riskAnalysis.moderateRisk.slice(0, 8).map((clause, index) => `
-                                <div style="margin-bottom: 15px; border: 1px solid #d97706; border-radius: 6px; overflow: hidden;">
-                                    <div style="background: #fffbeb; padding: 12px;">
-                                        <h4 style="margin: 0; color: #92400e; font-size: 14px;">Moderate Risk Clause #${index + 1}</h4>
-                                    </div>
-                                    <div style="padding: 15px;">
-                                        <div style="background: #f9fafb; padding: 12px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid #d97706;">
-                                            <p style="margin: 0; font-family: monospace; font-size: 12px; color: #374151;">${clause.original_text}</p>
-                                        </div>
-                                        <p style="margin: 0; color: #475569; font-size: 14px;"><strong>Analysis:</strong> ${clause.plain_english}</p>
-                                    </div>
-                                </div>
-                            `).join('')}
-                            ${report.riskAnalysis.moderateRisk.length > 8 ? `
+                            ${report.riskAnalysis.highRisk.length > 5 ? `
                                 <div style="background: #f1f5f9; padding: 15px; border-radius: 6px; text-align: center;">
-                                    <p style="margin: 0; color: #64748b; font-style: italic;">... and ${report.riskAnalysis.moderateRisk.length - 8} additional moderate risk clauses requiring review</p>
+                                    <p style="margin: 0; color: #64748b; font-style: italic;">... and ${report.riskAnalysis.highRisk.length - 5} additional critical risk clauses requiring immediate attention</p>
                                 </div>
                             ` : ''}
                         </div>
                     ` : ''}
 
-                    <!-- Contract Health Score -->
                     <div style="margin-bottom: 35px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px;">
-                        <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 20px; font-weight: bold;">📈 Contract Health Metrics</h2>
+                        <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 20px; font-weight: bold;">Contract Health Metrics</h2>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                             <div style="text-align: center; padding: 20px; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">
                                 <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 32px; font-weight: bold;">${report.contractMetrics.readabilityScore}/100</h3>
@@ -711,22 +635,21 @@ export default function DocumentView() {
                         </div>
                     </div>
 
-                    <!-- Action Plan Summary -->
                     <div style="margin-bottom: 35px; background: #1e293b; color: white; border-radius: 12px; padding: 25px;">
-                        <h2 style="color: white; font-size: 24px; margin-bottom: 20px; font-weight: bold;">🎯 Recommended Action Plan</h2>
+                        <h2 style="color: white; font-size: 24px; margin-bottom: 20px; font-weight: bold;">Recommended Action Plan</h2>
                         <div style="display: grid; grid-template-columns: repeat(${report.contractOverview.riskScore >= 70 ? '4' : '3'}, 1fr); gap: 20px;">
                             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
-                                <h4 style="margin: 0 0 10px 0; color: #fbbf24; font-size: 16px;">PHASE 1</h4>
+                                <h4 style="margin: 0 0 10px 0; color: #c5a35a; font-size: 16px;">PHASE 1</h4>
                                 <p style="margin: 0; font-size: 14px;">Legal Review</p>
                                 <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Timeline: ${report.contractOverview.riskScore >= 70 ? 'Immediate' : '1-2 weeks'}</p>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
-                                <h4 style="margin: 0 0 10px 0; color: #fbbf24; font-size: 16px;">PHASE 2</h4>
+                                <h4 style="margin: 0 0 10px 0; color: #c5a35a; font-size: 16px;">PHASE 2</h4>
                                 <p style="margin: 0; font-size: 14px;">Risk Mitigation</p>
                                 <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Timeline: 2-3 weeks</p>
                             </div>
                             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
-                                <h4 style="margin: 0 0 10px 0; color: #fbbf24; font-size: 16px;">PHASE 3</h4>
+                                <h4 style="margin: 0 0 10px 0; color: #c5a35a; font-size: 16px;">PHASE 3</h4>
                                 <p style="margin: 0; font-size: 14px;">Negotiation</p>
                                 <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Timeline: 1-4 weeks</p>
                             </div>
@@ -740,10 +663,9 @@ export default function DocumentView() {
                         </div>
                     </div>
 
-                    <!-- Legal Disclaimer & Contact -->
                     <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e2e8f0;">
                         <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                            <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 18px;">⚖️ Important Legal Disclaimer</h3>
+                            <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 18px;">Important Legal Disclaimer</h3>
                             <p style="margin: 0 0 10px 0; color: #475569; font-size: 14px; line-height: 1.6;">This analysis is provided for informational purposes only and does not constitute legal advice. The AI-generated insights should be reviewed by qualified legal counsel before making any contractual decisions. LawLytics assumes no liability for decisions made based on this report.</p>
                             <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;"><strong>Recommendation:</strong> Always consult with a licensed attorney familiar with your jurisdiction and industry before executing any contract, especially those with high-risk clauses identified in this analysis.</p>
                         </div>
@@ -791,7 +713,7 @@ export default function DocumentView() {
                 heightLeft -= 297;
             }
             
-            pdf.save(`LawLytics_Comprehensive_Report_${documentId}_${new Date().toISOString().split('T')[0]}.pdf`);
+            pdf.save(`LawLytics_Report_${documentId}_${new Date().toISOString().split('T')[0]}.pdf`);
             
             document.body.removeChild(reportContainer);
         } catch (error) {
@@ -810,14 +732,13 @@ export default function DocumentView() {
     ];
 
     return (
-        <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-all duration-300`}>
-            {/* Enhanced Header with Gradient Background */}
-            <header className={`${isDarkMode ? 'bg-gray-800/95 border-gray-700/50' : 'bg-white/95 border-gray-200'} border-b backdrop-blur-sm sticky top-0 z-50 transition-all duration-300`}>
+        <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e]' : 'bg-gray-50'} transition-all duration-300`}>
+            <header className={`${isDarkMode ? 'bg-[#1a2c32] border-[#2a4a53]' : 'bg-white/95 border-gray-200'} border-b backdrop-blur-sm sticky top-0 z-50 transition-all duration-300`}>
                 <div className="max-w-7xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <div className="relative">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#c5a35a] to-[#b5944a] rounded-xl flex items-center justify-center shadow-lg">
                                     <Shield className="w-6 h-6 text-white" />
                                 </div>
                                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
@@ -833,12 +754,11 @@ export default function DocumentView() {
                             </div>
                         </div>
                         <div className="flex items-center space-x-3">
-                            {/* Dark Mode Toggle */}
                             <button
                                 onClick={toggleDarkMode}
                                 className={`p-3 rounded-xl transition-all duration-300 ${
                                     isDarkMode 
-                                        ? 'bg-gray-700/80 text-yellow-400 hover:bg-gray-600 hover:scale-105' 
+                                        ? 'bg-[#223a42] text-yellow-400 hover:bg-[#2a4a53] hover:scale-105' 
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
                                 } backdrop-blur-sm`}
                                 title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -853,7 +773,7 @@ export default function DocumentView() {
                             <button 
                                 onClick={downloadReport} 
                                 disabled={isGeneratingReport}
-                                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-lg hover:shadow-xl hover:scale-105"
+                                className="bg-gradient-to-r from-[#c5a35a] to-[#b5944a] text-white px-6 py-3 rounded-xl font-medium hover:from-[#b5944a] hover:to-[#a5833a] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-lg hover:shadow-xl hover:scale-105"
                             >
                                 {isGeneratingReport ? (
                                     <>
@@ -873,18 +793,16 @@ export default function DocumentView() {
             </header>
 
             <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Enhanced Risk Summary with Animated Elements */}
-                <div className={`${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-8 mb-8 transition-all duration-300 relative overflow-hidden`}>
-                    {/* Background Pattern */}
+                <div className={`${isDarkMode ? 'bg-[#1a2c32] border-[#2a4a53]' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-8 mb-8 transition-all duration-300 relative overflow-hidden`}>
                     <div className="absolute inset-0 opacity-5">
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+                        <div className="w-full h-full bg-gradient-to-br from-[#c5a35a] via-[#b5944a] to-[#a5833a]"></div>
                     </div>
                     
                     <div className="relative z-10">
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-3`}>
-                                    <BarChart3 className="w-8 h-8 text-blue-500" />
+                                    <BarChart3 className="w-8 h-8 text-[#c5a35a]" />
                                     <span>Risk Assessment Overview</span>
                                 </h2>
                                 <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2 flex items-center space-x-2`}>
@@ -901,7 +819,7 @@ export default function DocumentView() {
                             <div className="lg:col-span-2 flex items-center space-x-8">
                                 <div className="relative">
                                     <RiskProgressBar score={overallRiskScore} color={currentRisk.color} isDark={isDarkMode} />
-                                    <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 blur animate-pulse"></div>
+                                    <div className="absolute -inset-2 bg-gradient-to-r from-[#c5a35a] to-[#b5944a] rounded-full opacity-20 blur animate-pulse"></div>
                                 </div>
                                 <div>
                                     <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-2 flex items-center space-x-2`}>
@@ -953,13 +871,11 @@ export default function DocumentView() {
                     </div>
                 </div>
 
-                {/* Enhanced Main Content with Responsive Chat */}
                 <div className={`grid gap-8 ${isChatExpanded ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} transition-all duration-500`}>
-                    {/* Enhanced Clause List */}
-                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-3'} ${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-6 transition-all duration-300`}>
+                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-3'} ${isDarkMode ? 'bg-[#1a2c32] border-[#2a4a53]' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm p-6 transition-all duration-300`}>
                         <div className="flex items-center justify-between mb-6">
                             <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-3`}>
-                                <FileText className="w-6 h-6 text-blue-500" />
+                                <FileText className="w-6 h-6 text-[#c5a35a]" />
                                 <span>Document Clauses</span>
                             </h2>
                             <div className="flex items-center space-x-3">
@@ -967,46 +883,46 @@ export default function DocumentView() {
                                 <select 
                                     value={selectedRiskFilter} 
                                     onChange={(e) => setSelectedRiskFilter(e.target.value)} 
-                                    className={`${isDarkMode ? 'bg-gray-700/80 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
+                                    className={`${isDarkMode ? 'bg-[#223a42] border-[#2a4a53] text-white' : 'bg-white border-gray-300 text-gray-900'} rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c5a35a] focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
                                 >
                                     <option value="all">All Clauses ({riskStats.total})</option>
-                                    <option value="high">🚨 High Risk ({riskStats.high})</option>
-                                    <option value="moderate">⚠️ Moderate ({riskStats.moderate})</option>
-                                    <option value="low">✅ Low Risk ({riskStats.low})</option>
-                                    <option value="review">👁️ Review ({riskStats.review})</option>
+                                    <option value="high">High Risk ({riskStats.high})</option>
+                                    <option value="moderate">Moderate ({riskStats.moderate})</option>
+                                    <option value="low">Low Risk ({riskStats.low})</option>
+                                    <option value="review">Review ({riskStats.review})</option>
                                 </select>
                             </div>
                         </div>
                         
                         <div className="space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
                             {filteredClauses.map((clause, index) => (
-                                <div key={index} className={`${isDarkMode ? 'border-gray-600/50 hover:bg-gray-700/30 hover:border-gray-500' : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'} border rounded-xl p-6 transition-all duration-300 group hover:shadow-lg`}>
+                                <div key={index} className={`${isDarkMode ? 'border-[#2a4a53] hover:bg-[#223a42] hover:border-[#c5a35a]/30' : 'border-gray-200 hover:bg-gray-50 hover:border-[#c5a35a]/30'} border rounded-xl p-6 transition-all duration-300 group hover:shadow-lg`}>
                                     <div className="flex items-center justify-between mb-4">
                                         {getRiskBadge(clause.risk_level, isDarkMode)}
                                         <div className="flex items-center space-x-2">
                                             <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} font-medium tracking-wide`}>CLAUSE</span>
-                                            <div className={`w-6 h-6 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} flex items-center justify-center`}>
+                                            <div className={`w-6 h-6 rounded-full ${isDarkMode ? 'bg-[#223a42]' : 'bg-gray-100'} flex items-center justify-center`}>
                                                 <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{index + 1}</span>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div className={`${isDarkMode ? 'bg-gray-700/50 border-gray-600/50' : 'bg-gray-50 border-gray-200'} rounded-xl p-4 mb-4 border transition-all duration-300 group-hover:border-blue-300`}>
+                                    <div className={`${isDarkMode ? 'bg-[#223a42] border-[#2a4a53]' : 'bg-gray-50 border-gray-200'} rounded-xl p-4 mb-4 border transition-all duration-300 group-hover:border-[#c5a35a]/30`}>
                                         <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-800'} leading-relaxed text-sm font-mono`}>{clause.original_text}</p>
                                     </div>
                                     
                                     {clause.plain_english && (
-                                        <div className={`${isDarkMode ? 'bg-blue-900/30 border-blue-700/50' : 'bg-blue-50 border-blue-200'} rounded-xl p-4 border transition-all duration-300`}>
+                                        <div className={`${isDarkMode ? 'bg-[#c5a35a]/10 border-[#c5a35a]/30' : 'bg-[#c5a35a]/5 border-[#c5a35a]/30'} rounded-xl p-4 border transition-all duration-300`}>
                                             <div className="flex items-start space-x-3">
-                                                <div className={`w-8 h-8 ${isDarkMode ? 'bg-blue-800/50' : 'bg-blue-100'} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-300`}>
-                                                    <Lightbulb className={`w-4 h-4 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`} />
+                                                <div className={`w-8 h-8 ${isDarkMode ? 'bg-[#c5a35a]/20' : 'bg-[#c5a35a]/10'} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-300`}>
+                                                    <Lightbulb className={`w-4 h-4 ${isDarkMode ? 'text-[#c5a35a]' : 'text-[#b5944a]'}`} />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <h4 className={`${isDarkMode ? 'text-blue-300' : 'text-blue-900'} font-semibold text-sm mb-2 flex items-center space-x-2`}>
+                                                    <h4 className={`${isDarkMode ? 'text-[#c5a35a]' : 'text-[#b5944a]'} font-semibold text-sm mb-2 flex items-center space-x-2`}>
                                                         <span>AI Analysis</span>
                                                         <Zap className="w-3 h-3" />
                                                     </h4>
-                                                    <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-800'} text-sm leading-relaxed`}>{clause.plain_english}</p>
+                                                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-sm leading-relaxed`}>{clause.plain_english}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1016,7 +932,7 @@ export default function DocumentView() {
                             
                             {filteredClauses.length === 0 && (
                                 <div className="text-center py-16">
-                                    <div className={`w-20 h-20 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300`}>
+                                    <div className={`w-20 h-20 ${isDarkMode ? 'bg-[#223a42]' : 'bg-gray-100'} rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300`}>
                                         <Filter className={`w-8 h-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} transition-colors duration-300`} />
                                     </div>
                                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>No clauses found</h3>
@@ -1027,21 +943,20 @@ export default function DocumentView() {
                         </div>
                     </div>
 
-                    {/* Enhanced AI Chat Panel */}
-                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-1'} ${isDarkMode ? 'bg-gray-800/90 border-gray-700/50' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm flex flex-col transition-all duration-500 ${isChatExpanded ? 'h-[85vh]' : 'h-[80vh]'}`}>
-                        <div className={`p-6 ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200'} border-b transition-colors duration-300`}>
+                    <div className={`${isChatExpanded ? 'lg:col-span-1' : 'lg:col-span-1'} ${isDarkMode ? 'bg-[#1a2c32] border-[#2a4a53]' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border backdrop-blur-sm flex flex-col transition-all duration-500 ${isChatExpanded ? 'h-[85vh]' : 'h-[80vh]'}`}>
+                        <div className={`p-6 ${isDarkMode ? 'border-[#2a4a53]' : 'border-gray-200'} border-b transition-colors duration-300`}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
                                     <div className="relative">
-                                        <div className={`w-10 h-10 ${isDarkMode ? 'bg-blue-900/50' : 'bg-blue-100'} rounded-xl flex items-center justify-center transition-colors duration-300`}>
-                                            <Bot className={`w-5 h-5 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} transition-colors duration-300`} />
+                                        <div className={`w-10 h-10 ${isDarkMode ? 'bg-[#c5a35a]/20' : 'bg-[#c5a35a]/10'} rounded-xl flex items-center justify-center transition-colors duration-300`}>
+                                            <Bot className={`w-5 h-5 ${isDarkMode ? 'text-[#c5a35a]' : 'text-[#b5944a]'} transition-colors duration-300`} />
                                         </div>
                                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
                                     </div>
                                     <div>
                                         <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300 flex items-center space-x-2`}>
                                             <span>LawLytics AI</span>
-                                            <Star className="w-4 h-4 text-yellow-500" />
+                                            <Star className="w-4 h-4 text-[#c5a35a]" />
                                         </h3>
                                         <div className="flex items-center space-x-2">
                                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -1053,7 +968,7 @@ export default function DocumentView() {
                                     onClick={() => setIsChatExpanded(!isChatExpanded)}
                                     className={`p-2.5 rounded-xl transition-all duration-300 ${
                                         isDarkMode 
-                                            ? 'hover:bg-gray-700 text-gray-400 hover:text-white' 
+                                            ? 'hover:bg-[#223a42] text-gray-400 hover:text-white' 
                                             : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                                     } hover:scale-110`}
                                     title={isChatExpanded ? 'Minimize chat' : 'Expand chat'}
@@ -1066,8 +981,8 @@ export default function DocumentView() {
                         <div className="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar">
                             {messages.length === 0 && (
                                 <div className="text-center py-12">
-                                    <div className={`w-16 h-16 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}>
-                                        <MessageSquare className="w-8 h-8 text-blue-500" />
+                                    <div className={`w-16 h-16 ${isDarkMode ? 'bg-[#223a42]' : 'bg-gray-100'} rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}>
+                                        <MessageSquare className="w-8 h-8 text-[#c5a35a]" />
                                     </div>
                                     <h4 className={`font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Ask me anything</h4>
                                     <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mb-1 transition-colors duration-300`}>I can explain clauses, assess risks, and provide legal insights</p>
@@ -1082,14 +997,14 @@ export default function DocumentView() {
                                 <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
                                     <div className={`max-w-xs relative group ${
                                         msg.sender === 'user' 
-                                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
+                                            ? 'bg-gradient-to-r from-[#c5a35a] to-[#b5944a] text-white' 
                                             : isDarkMode 
-                                                ? 'bg-gray-700/80 text-gray-200 border border-gray-600/50' 
+                                                ? 'bg-[#223a42] text-gray-200 border border-[#2a4a53]' 
                                                 : 'bg-gray-100 text-gray-800 border border-gray-200'
                                     } p-4 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105`}>
                                         <div className="flex items-start space-x-2">
                                             {msg.sender === 'ai' && (
-                                                <Bot className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                                                <Bot className="w-4 h-4 text-[#c5a35a] flex-shrink-0 mt-0.5" />
                                             )}
                                             {msg.sender === 'user' && (
                                                 <User className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
@@ -1098,7 +1013,7 @@ export default function DocumentView() {
                                                 <p className="leading-relaxed text-sm">{msg.text}</p>
                                                 <p className={`text-xs mt-2 ${
                                                     msg.sender === 'user' 
-                                                        ? 'text-blue-100' 
+                                                        ? 'text-white/70' 
                                                         : isDarkMode 
                                                             ? 'text-gray-400' 
                                                             : 'text-gray-500'
@@ -1116,15 +1031,15 @@ export default function DocumentView() {
                                 <div className="flex justify-start">
                                     <div className={`p-4 rounded-2xl transition-colors duration-300 ${
                                         isDarkMode 
-                                            ? 'bg-gray-700/80 border border-gray-600/50' 
+                                            ? 'bg-[#223a42] border border-[#2a4a53]' 
                                             : 'bg-gray-100 border border-gray-200'
                                     } backdrop-blur-sm`}>
                                         <div className="flex items-center space-x-3">
-                                            <Bot className="w-4 h-4 text-blue-500" />
+                                            <Bot className="w-4 h-4 text-[#c5a35a]" />
                                             <div className="flex space-x-1">
-                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`}></div>
-                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}}></div>
-                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-400'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}}></div>
+                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-[#c5a35a]' : 'bg-[#b5944a]'} rounded-full animate-bounce`}></div>
+                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-[#c5a35a]' : 'bg-[#b5944a]'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}}></div>
+                                                <div className={`w-2 h-2 ${isDarkMode ? 'bg-[#c5a35a]' : 'bg-[#b5944a]'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}}></div>
                                             </div>
                                             <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors duration-300`}>Analyzing...</span>
                                         </div>
@@ -1134,7 +1049,7 @@ export default function DocumentView() {
                             <div ref={chatEndRef} />
                         </div>
                         
-                        <div className={`p-6 ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200'} border-t transition-colors duration-300`}>
+                        <div className={`p-6 ${isDarkMode ? 'border-[#2a4a53]' : 'border-gray-200'} border-t transition-colors duration-300`}>
                             <form onSubmit={handleSendMessage} className="space-y-4">
                                 <div className="relative">
                                     <input 
@@ -1142,16 +1057,16 @@ export default function DocumentView() {
                                         value={userInput} 
                                         onChange={(e) => setUserInput(e.target.value)} 
                                         placeholder="Ask about specific clauses or risks..." 
-                                        className={`w-full px-4 py-3 pr-12 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
+                                        className={`w-full px-4 py-3 pr-12 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#c5a35a] focus:border-transparent transition-all duration-300 ${
                                             isDarkMode 
-                                                ? 'bg-gray-700/80 border-gray-600/50 text-white placeholder-gray-400' 
+                                                ? 'bg-[#223a42] border-[#2a4a53] text-white placeholder-gray-400' 
                                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
                                         } backdrop-blur-sm`} 
                                     />
                                     <button 
                                         type="submit" 
                                         disabled={isLoading || !userInput.trim()} 
-                                        className="absolute right-2 top-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-110"
+                                        className="absolute right-2 top-2 bg-gradient-to-r from-[#c5a35a] to-[#b5944a] text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-[#b5944a] hover:to-[#a5833a] transition-all duration-300 hover:scale-110"
                                     >
                                         <Send className="w-4 h-4" />
                                     </button>
@@ -1166,8 +1081,8 @@ export default function DocumentView() {
                                                 onClick={() => setUserInput(suggestion.text)}
                                                 className={`text-xs rounded-full px-3 py-2 transition-all duration-300 flex items-center space-x-1 hover:scale-105 ${
                                                     isDarkMode 
-                                                        ? 'bg-gray-700/80 hover:bg-gray-600 border border-gray-600/50 text-gray-300 hover:text-white' 
-                                                        : 'bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 hover:text-gray-800'
+                                                        ? 'bg-[#223a42] hover:bg-[#2a4a53] border border-[#2a4a53] text-gray-300 hover:text-white hover:border-[#c5a35a]/30' 
+                                                        : 'bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 hover:text-gray-800 hover:border-[#c5a35a]/30'
                                                 } backdrop-blur-sm`}
                                             >
                                                 <IconComponent className="w-3 h-3" />
@@ -1182,21 +1097,20 @@ export default function DocumentView() {
                 </div>
             </main>
             
-            {/* Custom Styles */}
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: ${isDarkMode ? '#1f2937' : '#f3f4f6'};
+                    background: ${isDarkMode ? '#223a42' : '#f3f4f6'};
                     border-radius: 3px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: ${isDarkMode ? '#4b5563' : '#d1d5db'};
+                    background: ${isDarkMode ? '#2a4a53' : '#d1d5db'};
                     border-radius: 3px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: ${isDarkMode ? '#6b7280' : '#9ca3af'};
+                    background: ${isDarkMode ? '#c5a35a' : '#9ca3af'};
                 }
                 
                 @keyframes fadeIn {

@@ -13,7 +13,7 @@ export default function Header() {
 
     const handleLogout = async () => {
         try {
-            // await signOut(auth);
+            await signOut(auth);
             console.log("User signed out.");
             navigate('/'); // Redirect to landing page after logout
         } catch (error) {

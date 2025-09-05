@@ -9,12 +9,10 @@ import {
     ArrowDown, Navigation
 } from 'lucide-react';
 
-// --- Helper Components (No changes needed here) ---
-
 const getEventIcon = (eventText) => {
     const text = eventText.toLowerCase();
     if (text.includes('filed') || text.includes('submitted') || text.includes('document')) {
-        return { Icon: FileText, color: 'text-blue-400', category: 'filing' };
+        return { Icon: FileText, color: 'text-[#c5a35a]', category: 'filing' };
     }
     if (text.includes('hearing') || text.includes('court') || text.includes('judge') || text.includes('trial')) {
         return { Icon: Gavel, color: 'text-amber-400', category: 'legal' };
@@ -31,18 +29,18 @@ const getEventIcon = (eventText) => {
     if (text.includes('denied') || text.includes('rejected') || text.includes('dismissed')) {
         return { Icon: XCircle, color: 'text-red-400', category: 'rejection' };
     }
-    return { Icon: Calendar, color: 'text-slate-400', category: 'general' };
+    return { Icon: Calendar, color: 'text-gray-400', category: 'general' };
 };
 
 const AnimatedPointer = ({ isVisible, isMoving }) => (
     <div className={`absolute left-8 w-6 h-6 transition-all duration-500 z-20 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
         <div className={`relative w-full h-full ${isMoving ? 'animate-bounce' : ''}`}>
-            <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-75"></div>
-            <div className="absolute inset-0 bg-blue-400 rounded-full animate-pulse"></div>
-            <div className="relative w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+            <div className="absolute inset-0 bg-[#c5a35a] rounded-full animate-ping opacity-75"></div>
+            <div className="absolute inset-0 bg-[#b5944a] rounded-full animate-pulse"></div>
+            <div className="relative w-full h-full bg-gradient-to-r from-[#c5a35a] to-[#b5944a] rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                 <Navigation className="w-3 h-3 text-white transform rotate-180" />
             </div>
-            <div className="absolute -inset-2 bg-blue-500/30 rounded-full blur-sm animate-pulse"></div>
+            <div className="absolute -inset-2 bg-[#c5a35a]/30 rounded-full blur-sm animate-pulse"></div>
         </div>
     </div>
 );
@@ -60,39 +58,39 @@ const VerticalTimelineCard = ({ date, event, parties, index, onClick, isSelected
         >
             <div className="relative flex flex-col items-center">
                 {index > 0 && (
-                    <div className={`w-1 h-8 transition-colors duration-500 ${isCurrentAutoPlay ? 'bg-gradient-to-b from-blue-500 to-purple-600' : 'bg-slate-600'}`}></div>
+                    <div className={`w-1 h-8 transition-colors duration-500 ${isCurrentAutoPlay ? 'bg-gradient-to-b from-[#c5a35a] to-[#b5944a]' : 'bg-[#2a4a53]'}`}></div>
                 )}
                 <div className={`relative w-12 h-12 flex items-center justify-center rounded-full border-4 transition-all duration-500 z-10
                     ${isCurrentAutoPlay 
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 border-white shadow-2xl shadow-blue-500/50 scale-125' 
+                        ? 'bg-gradient-to-r from-[#c5a35a] to-[#b5944a] border-white shadow-2xl shadow-[#c5a35a]/50 scale-125' 
                         : isSelected 
-                            ? 'bg-slate-700 border-blue-400 shadow-xl shadow-blue-500/20' 
-                            : 'bg-slate-800 border-slate-600 group-hover:border-blue-400'
+                            ? 'bg-[#1a2c32] border-[#c5a35a] shadow-xl shadow-[#c5a35a]/20' 
+                            : 'bg-[#223a42] border-[#2a4a53] group-hover:border-[#c5a35a]'
                     }
                 `}>
-                    <Icon className={`w-5 h-5 transition-all duration-300 ${isCurrentAutoPlay ? 'text-white scale-110' : isSelected ? 'text-blue-400' : color} group-hover:scale-110`} />
+                    <Icon className={`w-5 h-5 transition-all duration-300 ${isCurrentAutoPlay ? 'text-white scale-110' : isSelected ? 'text-[#c5a35a]' : color} group-hover:scale-110`} />
                 </div>
-                <div className={`w-1 flex-1 min-h-8 transition-colors duration-500 ${isCurrentAutoPlay ? 'bg-gradient-to-b from-purple-600 to-slate-600' : 'bg-slate-600'}`}></div>
+                <div className={`w-1 flex-1 min-h-8 transition-colors duration-500 ${isCurrentAutoPlay ? 'bg-gradient-to-b from-[#b5944a] to-[#2a4a53]' : 'bg-[#2a4a53]'}`}></div>
             </div>
             
-            <div className={`flex-1 bg-slate-800/50 border rounded-2xl p-6 transition-all duration-500 group-hover:border-blue-500/50 group-hover:bg-slate-700/50
-                ${isCurrentAutoPlay ? 'bg-blue-900/30 border-blue-400 shadow-2xl shadow-blue-500/20' : 'border-slate-700'}
-                ${isSelected ? 'bg-blue-900/20 border-blue-500' : ''}
+            <div className={`flex-1 border rounded-2xl p-6 transition-all duration-500 group-hover:border-[#c5a35a]/50 group-hover:bg-[#223a42]/50
+                ${isCurrentAutoPlay ? 'bg-[#c5a35a]/10 border-[#c5a35a] shadow-2xl shadow-[#c5a35a]/20' : 'bg-[#1a2c32]/50 border-[#2a4a53]'}
+                ${isSelected ? 'bg-[#c5a35a]/5 border-[#c5a35a]/70' : ''}
             `}>
                 <div className="flex items-start justify-between mb-4">
-                    <time className={`text-sm font-semibold px-3 py-1 rounded-lg transition-colors duration-300 ${isCurrentAutoPlay ? 'bg-blue-500 text-white' : 'bg-blue-900/30 text-blue-300'}`}>
+                    <time className={`text-sm font-semibold px-3 py-1 rounded-lg transition-colors duration-300 ${isCurrentAutoPlay ? 'bg-[#c5a35a] text-white' : 'bg-[#c5a35a]/20 text-[#c5a35a]'}`}>
                         {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
                     </time>
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={(e) => { e.stopPropagation(); onBookmark(index); }}
-                            className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-400 bg-yellow-900/30' : 'text-slate-400 hover:text-yellow-400 hover:bg-yellow-900/20'}`}
+                            className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-400 bg-yellow-900/30' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-900/20'}`}
                         >
                             <Bookmark className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} />
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                            className="p-2 text-slate-400 hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-900/20"
+                            className="p-2 text-gray-400 hover:text-[#c5a35a] transition-colors rounded-lg hover:bg-[#c5a35a]/10"
                         >
                             <Eye className="w-4 h-4" />
                         </button>
@@ -100,13 +98,13 @@ const VerticalTimelineCard = ({ date, event, parties, index, onClick, isSelected
                 </div>
                 
                 <div className={`transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-24'} overflow-hidden`}>
-                    <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${isCurrentAutoPlay ? 'text-blue-200' : 'text-white'}`}>
+                    <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${isCurrentAutoPlay ? 'text-[#c5a35a]' : 'text-white'}`}>
                         {event}
                     </h3>
                 </div>
                 
                 <div className="flex items-center justify-between mt-4">
-                    <span className="text-sm px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors duration-300 bg-purple-900/50 text-purple-300">
+                    <span className="text-sm px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors duration-300 bg-[#b5944a]/20 text-[#b5944a]">
                         <Users className="w-4 h-4"/>
                         {parties}
                     </span>
@@ -116,36 +114,42 @@ const VerticalTimelineCard = ({ date, event, parties, index, onClick, isSelected
     );
 };
 
-const StatCard = ({ title, value, icon: Icon, color = 'teal' }) => (
-    <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
-        <div className={`w-12 h-12 flex-shrink-0 bg-slate-700 text-${color}-300 rounded-xl flex items-center justify-center`}>
+const StatCard = ({ title, value, icon: Icon, color = 'gold' }) => (
+    <div className="bg-[#1a2c32]/50 border border-[#2a4a53] p-4 rounded-xl flex items-center gap-4 hover:bg-[#223a42]/50 transition-colors duration-300">
+        <div className={`w-12 h-12 flex-shrink-0 bg-[#223a42] rounded-xl flex items-center justify-center ${
+            color === 'gold' ? 'text-[#c5a35a]' : 
+            color === 'blue' ? 'text-blue-400' :
+            color === 'amber' ? 'text-amber-400' :
+            color === 'yellow' ? 'text-yellow-400' :
+            color === 'purple' ? 'text-purple-400' : 'text-[#c5a35a]'
+        }`}>
             <Icon className="w-6 h-6" />
         </div>
         <div>
-            <p className="text-sm text-slate-400">{title}</p>
-            <p className="text-1xl font-bold text-white">{value}</p>
+            <p className="text-sm text-gray-400">{title}</p>
+            <p className="text-xl font-bold text-white">{value}</p>
         </div>
     </div>
 );
 
 const ControlPanel = ({ filters, onFilterChange, isPlaying, onPlayPause, speed, onSpeedChange }) => (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 mb-8 sticky top-4 z-30 backdrop-blur-sm">
+    <div className="bg-[#1a2c32]/50 border border-[#2a4a53] rounded-2xl p-6 mb-8 sticky top-4 z-30 backdrop-blur-sm">
          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-slate-400" />
+                <Search className="w-4 h-4 text-gray-400" />
                 <input 
                     type="text"
                     placeholder="Search events..."
-                    className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                    className="bg-[#223a42]/50 border border-[#2a4a53] rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:border-[#c5a35a] focus:outline-none transition-colors duration-300"
                     value={filters.search}
                     onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
                 />
             </div>
             
             <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400" />
+                <Filter className="w-4 h-4 text-gray-400" />
                 <select 
-                    className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+                    className="bg-[#223a42]/50 border border-[#2a4a53] rounded-lg px-3 py-2 text-white focus:border-[#c5a35a] focus:outline-none transition-colors duration-300"
                     value={filters.category}
                     onChange={(e) => onFilterChange({ ...filters, category: e.target.value })}
                 >
@@ -163,7 +167,7 @@ const ControlPanel = ({ filters, onFilterChange, isPlaying, onPlayPause, speed, 
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                         isPlaying 
                             ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20' 
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20'
+                            : 'bg-gradient-to-r from-[#c5a35a] to-[#b5944a] hover:from-[#b5944a] hover:to-[#a5833a] text-white shadow-lg shadow-[#c5a35a]/20'
                     }`}
                 >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -173,7 +177,7 @@ const ControlPanel = ({ filters, onFilterChange, isPlaying, onPlayPause, speed, 
                 <select 
                     value={speed}
                     onChange={(e) => onSpeedChange(Number(e.target.value))}
-                    className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+                    className="bg-[#223a42]/50 border border-[#2a4a53] rounded-lg px-3 py-2 text-white focus:border-[#c5a35a] focus:outline-none transition-colors duration-300"
                     disabled={!isPlaying}
                 >
                     <option value={0.5}>0.5x Slow</option>
@@ -186,18 +190,15 @@ const ControlPanel = ({ filters, onFilterChange, isPlaying, onPlayPause, speed, 
     </div>
 );
 
-// --- Main Component ---
 export default function TimelineView() {
     const { id: documentId } = useParams();
     const location = useLocation();
     
-    // State to hold dynamic data fetched from the backend
     const [timeline, setTimeline] = useState(location.state?.timeline || null);
     const [fileName, setFileName] = useState(location.state?.fileName || 'Case Timeline');
     const [isLoading, setIsLoading] = useState(!timeline);
     const [error, setError] = useState('');
 
-    // State for interactive features
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [bookmarkedEvents, setBookmarkedEvents] = useState(new Set());
     const [filters, setFilters] = useState({ search: '', category: 'all' });
@@ -207,7 +208,6 @@ export default function TimelineView() {
     const playInterval = useRef(null);
     const cardRefs = useRef([]);
 
-    // Fetch data from backend if it wasn't passed via navigation state
     useEffect(() => {
         if (timeline) {
             setIsLoading(false);
@@ -230,7 +230,6 @@ export default function TimelineView() {
         fetchTimelineData();
     }, [documentId, timeline]);
 
-    // Filter timeline based on current search and category filters
     const filteredTimeline = timeline ? timeline.filter(event => {
         const matchesSearch = event.event.toLowerCase().includes(filters.search.toLowerCase()) ||
                               event.parties.toLowerCase().includes(filters.search.toLowerCase());
@@ -238,7 +237,6 @@ export default function TimelineView() {
         return matchesSearch && matchesCategory;
     }) : [];
     
-    // Auto-play functionality with smooth scrolling
     useEffect(() => {
         if (isPlaying && filteredTimeline.length > 0) {
             playInterval.current = setInterval(() => {
@@ -294,13 +292,12 @@ export default function TimelineView() {
         return `${diffDays} days`;
     };
 
-    // Render Guards for loading and error states
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-                    <p>Loading timeline...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c5a35a] mx-auto mb-4"></div>
+                    <p className="text-lg">Loading timeline...</p>
                 </div>
             </div>
         );
@@ -308,24 +305,24 @@ export default function TimelineView() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-                <div className="text-center p-8 bg-slate-800 rounded-lg">
+            <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white flex items-center justify-center">
+                <div className="text-center p-8 bg-[#1a2c32] border border-[#2a4a53] rounded-lg">
                     <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold mb-2">Error</h2>
-                    <p className="text-slate-400">{error}</p>
+                    <p className="text-gray-400">{error}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
+        <div className="min-h-screen bg-gradient-to-br from-[#0d1a1e] via-[#1a2c32] to-[#0d1a1e] text-white font-sans">
             <div className="max-w-4xl mx-auto p-8">
                 <header className="mb-8 text-center">
-                    <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-5xl font-bold bg-gradient-to-r from-[#c5a35a] to-[#b5944a] bg-clip-text text-transparent">
                         {fileName}
                     </h1>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto mt-2">
+                    <p className="text-gray-400 text-lg max-w-2xl mx-auto mt-2">
                         Follow the story as it unfolds. Press play to experience an animated journey through key events.
                     </p>
                 </header>
@@ -347,16 +344,16 @@ export default function TimelineView() {
                 </div>
                 
                 {isPlaying && (
-                    <div className="mb-8 bg-slate-800/50 border border-slate-700 rounded-2xl p-4">
+                    <div className="mb-8 bg-[#1a2c32]/50 border border-[#2a4a53] rounded-2xl p-4">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm text-slate-400">Story Progress</span>
-                            <span className="text-sm text-blue-400 font-semibold">
+                            <span className="text-sm text-gray-400">Story Progress</span>
+                            <span className="text-sm text-[#c5a35a] font-semibold">
                                 {filteredTimeline[currentPlayIndex]?.date} - Event {currentPlayIndex + 1} of {filteredTimeline.length}
                             </span>
                         </div>
-                        <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
+                        <div className="w-full bg-[#223a42] rounded-full h-3 overflow-hidden">
                             <div 
-                                className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out relative"
+                                className="bg-gradient-to-r from-[#c5a35a] to-[#b5944a] h-3 rounded-full transition-all duration-1000 ease-out relative"
                                 style={{ width: `${((currentPlayIndex + 1) / filteredTimeline.length) * 100}%` }}
                             >
                                 <div className="absolute right-0 top-0 h-full w-4 bg-white/30 animate-pulse"></div>
@@ -387,10 +384,10 @@ export default function TimelineView() {
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-20 bg-slate-800/50 rounded-2xl border border-slate-700">
-                            <Activity className="w-16 h-16 mx-auto text-slate-600 mb-4" />
+                        <div className="text-center py-20 bg-[#1a2c32]/50 rounded-2xl border border-[#2a4a53]">
+                            <Activity className="w-16 h-16 mx-auto text-[#2a4a53] mb-4" />
                             <h3 className="text-xl font-semibold text-white">No Events Found</h3>
-                            <p className="text-slate-400">Try adjusting your search or filter criteria.</p>
+                            <p className="text-gray-400">Try adjusting your search or filter criteria.</p>
                         </div>
                     )}
                 </div>
@@ -405,4 +402,3 @@ export default function TimelineView() {
         </div>
     );
 }
-
