@@ -2,7 +2,7 @@
 
 **From legalese to plain speak, instantly.**
 
-LexiLens is an **AI-powered legal co-pilot** designed to demystify complex legal documents. It transforms dense contracts, case files, and agreements into **simple, actionable insights**.  
+LawLytics is an **AI-powered legal co-pilot** designed to demystify complex legal documents. It transforms dense contracts, case files, and agreements into **simple, actionable insights**.  
 
 ✅ Instantly analyze documents for risks  
 ✅ Generate interactive case timelines  
@@ -44,7 +44,7 @@ LexiLens is an **AI-powered legal co-pilot** designed to demystify complex legal
 ---
 
 ## 🏗️ System Architecture
-LexiLens is built on a **scalable full-stack architecture**, leveraging **serverless functions** and **managed cloud services**.
+LawLytics is built on a **scalable full-stack architecture**, leveraging **serverless functions** and **managed cloud services**.
 
 <img width="1433" height="553" alt="image" src="https://github.com/user-attachments/assets/a3b06d12-69c3-4dfb-86c8-fcb2bb926d55" />
 
@@ -79,8 +79,8 @@ LexiLens is built on a **scalable full-stack architecture**, leveraging **server
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/lexilens.git
-cd lexilens
+git clone https://github.com/your-username/LawLytics.git
+cd LawLytics
 ```
 
 ### 2️⃣ Backend Setup
